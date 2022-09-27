@@ -95,13 +95,14 @@ def showgrid2(grid):
     # put those patched as legend-handles into the legend
     plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. , facecolor= 'green' )
     for _ in itertools.repeat(None, 6000):
-        grid = evolve( grid )
+        grid = evolve(grid)
     
     plt.subplot(1,2,2)
     plt.title("Final segregation")
     im = plt.imshow(grid,cmap=cmap, norm=norm)
     plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. , facecolor= 'green' )
     plt.show()
+    
 grid = rand_init(N,A_to_B,empty)
 showgrid2(grid)
 
