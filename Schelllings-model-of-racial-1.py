@@ -1,11 +1,15 @@
-from operator import ne
+
 import numpy as np
 from scipy.signal import convolve2d as convolve
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib import colors
+#import matplotlib.animation as animation
+import itertools
+
 # Gloval variables of the simulation
 N = 60
-sim_t = 0.4
+sim_t = 0.6
 empty = 0.1
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
@@ -51,61 +55,55 @@ def evolve(M,boundary='wrap'):
     filling[int(n_b_dissatisfied):int(n_b_dissatisfied+n_a_dissatisfied)] = 1
     np.random.shuffle(filling)
     M[M == -1] = filling
+    return M
 
 
 
     
-def showgrid(grid):
+#def showgrid(grid):
 
     values = np.unique(grid.ravel())
     labels = ['empty','A','B']
-    plt.figure()
-    plt.subplot(2,2,1)
-    plt.title("initial")
-    im = plt.imshow(grid)
-    colors = [ im.cmap(im.norm(value)) for value in values]
+    cmap = colors.ListedColormap(['white', 'red','blue'])
+    bounds=[-2,-0.5,0.5,1.5]
+    norm = colors.BoundaryNorm(bounds, cmap.N)
+    fig = plt.figure()
+    im = plt.imshow(grid,cmap=cmap, norm=norm)
+    Colors = [ im.cmap(im.norm(value)) for value in values]
     # create a patch (proxy artist) for every color 
-    patches = [ mpatches.Patch(color=colors[i], label="{l}".format(l=labels[i]) ) for i in range(len(values)) ]
+    patches = [ mpatches.Patch(color=Colors[i], label="{l}".format(l=labels[i]) ) for i in range(len(values)) ]
     # put those patched as legend-handles into the legend
-    plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. )
-    counter = 0
-    while(counter<30):
-        evolve(grid)
-        counter = counter + 1
-    plt.subplot(2,2,2)
-    plt.title("30 loops")
-    im = plt.imshow(grid)
-    colors = [ im.cmap(im.norm(value)) for value in values]
-    # create a patch (proxy artist) for every color 
-    patches = [ mpatches.Patch(color=colors[i], label="{l}".format(l=labels[i]) ) for i in range(len(values)) ]
-    # put those patched as legend-handles into the legend
-    plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. )
-    while(counter<60):
-        evolve(grid)
-        counter = counter + 1
-    plt.subplot(2,2,3)
-    plt.title("60 loops")
-    im = plt.imshow(grid)
-    colors = [ im.cmap(im.norm(value)) for value in values]
-    # create a patch (proxy artist) for every color 
-    patches = [ mpatches.Patch(color=colors[i], label="{l}".format(l=labels[i]) ) for i in range(len(values)) ]
-    # put those patched as legend-handles into the legend
-    plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. )
-    while(counter<120):
-        evolve(grid)
-        counter = counter + 1
-    plt.subplot(2,2,4)
-    plt.title("120 loops")
-    im = plt.imshow(grid)
-    colors = [ im.cmap(im.norm(value)) for value in values]
-    # create a patch (proxy artist) for every color 
-    patches = [ mpatches.Patch(color=colors[i], label="{l}".format(l=labels[i]) ) for i in range(len(values)) ]
-    # put those patched as legend-handles into the legend
-    plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. )
+    plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. , facecolor= 'green' )
+    ani = animation.FuncAnimation(fig, evolve, frames=1000,
+                              interval=10, blit=True,fargs = grid)
+
     plt.show()
 
+def showgrid2(grid):
+    values = np.unique(grid.ravel())
+    labels = ['empty','A','B']
+    cmap = colors.ListedColormap(['white', 'red','blue'])
+    bounds=[-2,-0.5,0.5,1.5]
+    norm = colors.BoundaryNorm(bounds, cmap.N)
+    plt.figure()
+    plt.subplot(1,2,1)
+    plt.title("Random initialitzation")
+    im = plt.imshow(grid,cmap=cmap, norm=norm)
+    Colors = [ im.cmap(im.norm(value)) for value in values]
+    # create a patch (proxy artist) for every color 
+    patches = [ mpatches.Patch(color=Colors[i], label="{l}".format(l=labels[i]) ) for i in range(len(values)) ]
+    # put those patched as legend-handles into the legend
+    plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. , facecolor= 'green' )
+    for _ in itertools.repeat(None, 6000):
+        grid = evolve(grid)
+    
+    plt.subplot(1,2,2)
+    plt.title("Final segregation")
+    im = plt.imshow(grid,cmap=cmap, norm=norm)
+    plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. , facecolor= 'green' )
+    plt.show()
 grid = rand_init(N,A_to_B,empty)
-showgrid(grid)
+showgrid2(grid)
 
 
 
