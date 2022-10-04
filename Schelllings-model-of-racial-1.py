@@ -11,13 +11,17 @@ from matplotlib.colors import ListedColormap
 
 
 class Schelling:
-    def __init__(self,size,empty_ratio,similarity_threshold,etnic_ratio,boundary='wrap') -> None:
+    def __init__(self,size,empty_ratio,similarity_threshold,etnic_ratio,neightborhod_size,boundary='wrap') -> None:
         self.size = size
         self.empty_ratio = empty_ratio
         self.similarity_threshold = similarity_threshold
         self.etnic_ratio = etnic_ratio
         self.boundary = boundary
-        self.Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
+        kernel = np.ones((3*neightborhod_size,3*neightborhod_size),dtype=np.int8)
+        kernel[1*neightborhod_size][1*neightborhod_size] =0 
+        self.Kernel = kernel
+        print(self.Kernel)
+        #self.Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
         self.city = np.zeros((int(self.size),int(self.size)))
 
     def rand_init(self):
@@ -83,12 +87,14 @@ class Schelling:
 
 
 st.title("Schelling's Model of Segregation")
-#population_size = st.sidebar.slider("Population Size", 500, 10000, 2500)
+population_size = st.sidebar.slider("Population Size", 500, 10000, 3600)
+red_blue_ratio = st.sidebar.slider("ratio from read to blue",0.1,5.,1.)
 empty_ratio = st.sidebar.slider("Empty Houses Ratio", 0., 1., .2)
 similarity_threshold = st.sidebar.slider("Similarity Threshold", 0., 1., .4)
+neightborhod_size = st.sidebar.slider("Neightborhod size",1,10,1)
 n_iterations = st.sidebar.number_input("Number of Iterations", 50)
 
-schelling = Schelling(60, empty_ratio, similarity_threshold, 1)
+schelling = Schelling(int(np.sqrt(population_size)), empty_ratio, similarity_threshold, red_blue_ratio,neightborhod_size)
 schelling.rand_init()
 mean_similarity_ratio = []
 mean_similarity_ratio.append(schelling.get_mean_similarity_ratio())
