@@ -17,11 +17,9 @@ class Schelling:
         self.similarity_threshold = similarity_threshold
         self.etnic_ratio = etnic_ratio
         self.boundary = boundary
-        kernel = np.ones((3*neightborhod_size,3*neightborhod_size),dtype=np.int8)
-        kernel[1*neightborhod_size][1*neightborhod_size] =0 
+        kernel = np.ones((2*neightborhod_size+1,2*neightborhod_size+1),dtype=np.int8)
+        kernel[neightborhod_size][neightborhod_size] =0 
         self.Kernel = kernel
-        print(self.Kernel)
-        #self.Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
         self.city = np.zeros((int(self.size),int(self.size)))
 
     def rand_init(self):
@@ -71,7 +69,7 @@ class Schelling:
         similarity_ratio = 0
         for (row, col), value in np.ndenumerate(self.city):
             race = self.city[row, col]
-            if race != 0:
+            if race != -1:
                 neighborhood = self.city[row-1:row+1, col-1:col+1]
                 neighborhood_size = np.size(neighborhood)
                 n_empty_houses = len(np.where(neighborhood == -1)[0])
@@ -80,6 +78,18 @@ class Schelling:
                     similarity_ratio += n_similar / (neighborhood_size - n_empty_houses - 1.)
                     count += 1
         return similarity_ratio / count
+    
+    def get_mean_similarity_ratio2(self):
+
+        Kws = dict(mode='same',boundary=self.boundary)
+        a_neights = convolve(self.city == 0,self.Kernel,**Kws)
+        b_neights = convolve(self.city == 1,self.Kernel,**Kws)
+        neights = convolve(self.city != -1,self.Kernel,**Kws)
+        n_similar = np.where((self.city !=-1) == 0,a_neights/neights,b_neights/neights).sum()
+        return n_similar/np.size(self.city)
+
+
+
 
 
 
@@ -115,7 +125,7 @@ plt.xlabel("Iterations")
 plt.xlim([0, n_iterations])
 plt.ylim([0.4, 1])
 plt.title("Mean Similarity Ratio", fontsize=15)
-plt.text(1, 0.95, "Similarity Ratio: %.4f" % schelling.get_mean_similarity_ratio(), fontsize=10)
+plt.text(1, 0.95, "Similarity Ratio: %.4f" % schelling.get_mean_similarity_ratio2(), fontsize=10)
 
 city_plot = st.pyplot(plt)
 
@@ -125,7 +135,7 @@ if st.sidebar.button('Run Simulation'):
 
     for i in range(n_iterations):
         schelling.evolve()
-        mean_similarity_ratio.append(schelling.get_mean_similarity_ratio())
+        mean_similarity_ratio.append(schelling.get_mean_similarity_ratio2())
         plt.figure(figsize=(8, 4))
 
         plt.subplot(121)
@@ -138,7 +148,7 @@ if st.sidebar.button('Run Simulation'):
         plt.ylim([0.4, 1])
         plt.title("Mean Similarity Ratio", fontsize=15)
         plt.plot(range(1, len(mean_similarity_ratio)+1), mean_similarity_ratio)
-        plt.text(1, 0.95, "Similarity Ratio: %.4f" % schelling.get_mean_similarity_ratio(), fontsize=10)
+        plt.text(1, 0.95, "Similarity Ratio: %.4f" % schelling.get_mean_similarity_ratio2(), fontsize=10)
 
         city_plot.pyplot(plt)
         plt.close("all")
