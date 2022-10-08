@@ -85,7 +85,11 @@ class Schelling:
         a_neights = convolve(self.city == 0,self.Kernel,**Kws)
         b_neights = convolve(self.city == 1,self.Kernel,**Kws)
         neights = convolve(self.city != -1,self.Kernel,**Kws)
-        n_similar = np.where((self.city !=-1) == 0,a_neights/neights,b_neights/neights).sum()
+        n_similar_a = np.where(np.logical_and(self.city !=-1,self.city == 0),\
+            a_neights/neights,0)
+        n_similar_b = np.where(np.logical_and(self.city !=-1,self.city == 1),\
+            b_neights/neights,0)
+        n_similar = (n_similar_a+n_similar_b).sum()
         return n_similar/np.size(self.city)
 
 
