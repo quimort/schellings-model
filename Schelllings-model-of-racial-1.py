@@ -52,6 +52,7 @@ class Schelling:
         a_neights = convolve(self.city == 0,self.Kernel,**Kws)
         b_neights = convolve(self.city == 1,self.Kernel,**Kws)
         neights = convolve(self.city != -1,self.Kernel,**Kws)
+        
         a_dissatisfaction = (a_neights/neights < self.similarity_threshold)&(self.city == 0)
         b_dissatisfaction = (b_neights/neights < self.similarity_threshold)&(self.city == 1)
         self.city[b_dissatisfaction | a_dissatisfaction] = -1
@@ -64,22 +65,11 @@ class Schelling:
         np.random.shuffle(filling)
         self.city[self.city == -1] = filling
     
-    def get_mean_similarity_ratio(self):
-        count = 0
-        similarity_ratio = 0
-        for (row, col), value in np.ndenumerate(self.city):
-            race = self.city[row, col]
-            if race != -1:
-                neighborhood = self.city[row-1:row+1, col-1:col+1]
-                neighborhood_size = np.size(neighborhood)
-                n_empty_houses = len(np.where(neighborhood == -1)[0])
-                if neighborhood_size != n_empty_houses + 1:
-                    n_similar = len(np.where(neighborhood == race)[0]) - 1
-                    similarity_ratio += n_similar / (neighborhood_size - n_empty_houses - 1.)
-                    count += 1
-        return similarity_ratio / count
+ 
+
     
-    def get_mean_similarity_ratio2(self):
+    
+    def get_mean_similarity_ratio(self):
 
         Kws = dict(mode='same',boundary=self.boundary)
         a_neights = convolve(self.city == 0,self.Kernel,**Kws)
@@ -89,7 +79,7 @@ class Schelling:
             a_neights/neights,0)
         n_similar_b = np.where(np.logical_and(self.city !=-1,self.city == 1),\
             b_neights/neights,0)
-        n_similar = (n_similar_a+n_similar_b).sum()
+        n_similar = np.sum((n_similar_a+n_similar_b))
         return n_similar/np.size(self.city)
 
 
@@ -104,8 +94,8 @@ st.title("Schelling's Model of Segregation")
 population_size = st.sidebar.slider("Population Size", 500, 10000, 3600)
 red_blue_ratio = st.sidebar.slider("ratio from read to blue",0.1,5.,1.)
 empty_ratio = st.sidebar.slider("Empty Houses Ratio", 0., 1., .2)
-similarity_threshold = st.sidebar.slider("Similarity Threshold", 0., 1., .4)
-neightborhod_size = st.sidebar.slider("Neightborhod size",1,10,1)
+similarity_threshold = st.sidebar.slider("Similarity Threshold", 0.1, 1., .4)
+neightborhod_size = st.sidebar.slider("Neightborhod size",1,5,1)
 n_iterations = st.sidebar.number_input("Number of Iterations", 50)
 
 schelling = Schelling(int(np.sqrt(population_size)), empty_ratio, similarity_threshold, red_blue_ratio,neightborhod_size)
@@ -127,19 +117,18 @@ plt.pcolor(schelling.city, cmap=cmap, edgecolors='w', linewidths=1)
 plt.subplot(122)
 plt.xlabel("Iterations")
 plt.xlim([0, n_iterations])
-plt.ylim([0.4, 1])
+plt.ylim([0.3, 1])
 plt.title("Mean Similarity Ratio", fontsize=15)
-plt.text(1, 0.95, "Similarity Ratio: %.4f" % schelling.get_mean_similarity_ratio2(), fontsize=10)
+plt.text(1, 0.95, "Similarity Ratio: %.4f" % schelling.get_mean_similarity_ratio(), fontsize=10)
 
 city_plot = st.pyplot(plt)
 
 progress_bar = st.progress(0)
-
 if st.sidebar.button('Run Simulation'):
-
+    print(np.sum(schelling.city ==-1))
     for i in range(n_iterations):
         schelling.evolve()
-        mean_similarity_ratio.append(schelling.get_mean_similarity_ratio2())
+        mean_similarity_ratio.append(schelling.get_mean_similarity_ratio())
         plt.figure(figsize=(8, 4))
 
         plt.subplot(121)
@@ -149,13 +138,14 @@ if st.sidebar.button('Run Simulation'):
         plt.subplot(122)
         plt.xlabel("Iterations")
         plt.xlim([0, n_iterations])
-        plt.ylim([0.4, 1])
+        plt.ylim([0.3, 1])
         plt.title("Mean Similarity Ratio", fontsize=15)
         plt.plot(range(1, len(mean_similarity_ratio)+1), mean_similarity_ratio)
-        plt.text(1, 0.95, "Similarity Ratio: %.4f" % schelling.get_mean_similarity_ratio2(), fontsize=10)
+        plt.text(1, 0.95, "Similarity Ratio: %.4f" % schelling.get_mean_similarity_ratio(), fontsize=10)
 
         city_plot.pyplot(plt)
         plt.close("all")
         progress_bar.progress((i+1.)/n_iterations)
 
+    print(np.sum(schelling.city ==-1))
 
