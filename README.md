@@ -7,3 +7,7 @@ The project will have a firs version where the only parameter that will be taken
 
 # Graphic interface
 Using the streamlit library we can play with the vaues of diferent paraemters to see what happends on each case.
+
+# Version 2
+
+In this version 2 i will aplay the clasic Schelling, considerein only one muvment at a time and onli moving if there is a position where it will be happy.
