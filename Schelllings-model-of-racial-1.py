@@ -49,21 +49,24 @@ class Schelling:
         then the individual moves to an empty house. 
         """
         Kws = dict(mode='same',boundary=self.boundary)
-        a_neights = convolve(self.city == 0,self.Kernel,**Kws)
-        b_neights = convolve(self.city == 1,self.Kernel,**Kws)
-        neights = convolve(self.city != -1,self.Kernel,**Kws)
+        M = self.city
+        a_neights = convolve(M == 0,self.Kernel,**Kws)
+        b_neights = convolve(M == 1,self.Kernel,**Kws)
+        neights = convolve(M != -1,self.Kernel,**Kws)
         
-        a_dissatisfaction = (a_neights/neights < self.similarity_threshold)&(self.city == 0)
-        b_dissatisfaction = (b_neights/neights < self.similarity_threshold)&(self.city == 1)
-        self.city[b_dissatisfaction | a_dissatisfaction] = -1
-        vacant = (self.city == -1).sum()
+        a_dissatisfaction = (a_neights/neights < self.similarity_threshold)&(M == 0)
+        b_dissatisfaction = (b_neights/neights < self.similarity_threshold)&(M == 1)
+        M[b_dissatisfaction | a_dissatisfaction] = -1
+        vacant = (M == -1).sum()
 
         n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
         filling = -np.ones(vacant,dtype=np.int8)
         filling[:int(n_a_dissatisfied)] = 0
         filling[int(n_b_dissatisfied):int(n_b_dissatisfied+n_a_dissatisfied)] = 1
         np.random.shuffle(filling)
-        self.city[self.city == -1] = filling
+        M[M == -1] = filling
+        self.city = M
+        print((M == -1).sum())
     
  
 
@@ -72,15 +75,16 @@ class Schelling:
     def get_mean_similarity_ratio(self):
 
         Kws = dict(mode='same',boundary=self.boundary)
-        a_neights = convolve(self.city == 0,self.Kernel,**Kws)
-        b_neights = convolve(self.city == 1,self.Kernel,**Kws)
-        neights = convolve(self.city != -1,self.Kernel,**Kws)
-        n_similar_a = np.where(np.logical_and(self.city !=-1,self.city == 0),\
+        M = self.city
+        a_neights = convolve(M == 0,self.Kernel,**Kws)
+        b_neights = convolve(M == 1,self.Kernel,**Kws)
+        neights = convolve(M != -1,self.Kernel,**Kws)
+        n_similar_a = np.where(np.logical_and(M !=-1,M == 0),\
             a_neights/neights,0)
-        n_similar_b = np.where(np.logical_and(self.city !=-1,self.city == 1),\
+        n_similar_b = np.where(np.logical_and(M !=-1,M == 1),\
             b_neights/neights,0)
         n_similar = np.sum((n_similar_a+n_similar_b))
-        return n_similar/np.size(self.city)
+        return n_similar/np.size(M)
 
 
 
@@ -125,7 +129,7 @@ city_plot = st.pyplot(plt)
 
 progress_bar = st.progress(0)
 if st.sidebar.button('Run Simulation'):
-    print(np.sum(schelling.city ==-1))
+    
     for i in range(n_iterations):
         schelling.evolve()
         mean_similarity_ratio.append(schelling.get_mean_similarity_ratio())
@@ -147,5 +151,5 @@ if st.sidebar.button('Run Simulation'):
         plt.close("all")
         progress_bar.progress((i+1.)/n_iterations)
 
-    print(np.sum(schelling.city ==-1))
+    
 
