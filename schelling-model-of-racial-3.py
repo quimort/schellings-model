@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import convolve2d as convolve
 
 # Gloval variables of the simulation
-N = 20
+N = 7
 sim_t = 0.4
 empty = 0.1
 A_to_B = 1
@@ -23,6 +23,17 @@ def rand_init(N,empty,a_to_b):
     M[int(-vacant):] = -1
     np.random.shuffle(M)
     return  M.reshape(int(N),int(N))
+
+def check_happines_neighborhod(M,position,boundary='wrap'):
+    Kws = dict(mode='same',boundary=boundary)
+    a_neights = convolve(M == 0,Kernel,**Kws)
+    b_neights = convolve(M == 1,Kernel,**Kws)
+    neights = convolve(M != -1,Kernel,**Kws)
+    Kernel2 = np.array([[[1,-1],[1,0],[1,1]],[[0,-1],[0,0],[0,1]],[[-1,-1],[-1,0],[-1,1]]])
+    salida = Kernel2 + position
+    for ii in salida:
+        dissatisfaction = 0
+    
 
 def evolve(M,boundary='wrap'):
     """
@@ -92,6 +103,9 @@ def get_mean_dissatisfaction(M,boundary='wrap'):
     return (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
 
 M = rand_init(N,empty,A_to_B)
+posico = np.array([0,3])
+check_happines_neighborhod(M,posico)
+"""
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
@@ -101,4 +115,5 @@ for i in range(5000):
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity final = {} /dissatisfaction final = {}".format(similarity,dissatisfacton))
+"""
 
