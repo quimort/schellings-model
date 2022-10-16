@@ -1,3 +1,4 @@
+from itertools import count
 import numpy as np
 from scipy.signal import convolve2d as convolve
 
@@ -24,15 +25,36 @@ def rand_init(N,empty,a_to_b):
     np.random.shuffle(M)
     return  M.reshape(int(N),int(N))
 
-def check_happines_neighborhod(M,position,boundary='wrap'):
+def check_happines_neighborhod(M,new_position,type,old_position,boundary='wrap'):
     Kws = dict(mode='same',boundary=boundary)
-    a_neights = convolve(M == 0,Kernel,**Kws)
-    b_neights = convolve(M == 1,Kernel,**Kws)
-    neights = convolve(M != -1,Kernel,**Kws)
+    new_M = M
+    new_M[new_position[0]][new_position[1]] = type
+    new_M[old_position[0]][old_position[1]] = -1
+    a_neights = convolve(new_M == 0,Kernel,**Kws)
+    b_neights = convolve(new_M == 1,Kernel,**Kws)
+    neights = convolve(new_M != -1,Kernel,**Kws)
     Kernel2 = np.array([[[1,-1],[1,0],[1,1]],[[0,-1],[0,0],[0,1]],[[-1,-1],[-1,0],[-1,1]]])
-    salida = Kernel2 + position
-    for ii in salida:
-        dissatisfaction = 0
+    possible_neights = Kernel2 + new_position
+    dissatisfaied = False
+    counter = 0
+    while (dissatisfaied != True) and (counter < np.size(possible_neights,axis=0)):
+        neight_type = new_M[possible_neights[counter][0]][possible_neights[counter][1]]
+        if (neight_type == 0):
+            position_a_neights = a_neights[possible_neights[counter][0]][possible_neights[counter][1]]
+            position_neights = neights[possible_neights[counter][0]][possible_neights[counter][1]]
+            dissatisfaied = (position_a_neights/position_neights <= sim_t)
+        elif (neight_type == 1):
+            position_b_neights = b_neights[possible_neights[counter][0]][possible_neights[counter][1]]
+            position_neights = neights[possible_neights[counter][0]][possible_neights[counter][1]]
+            dissatisfaied = (position_b_neights/position_neights <= sim_t)
+        count += 1
+    
+    return dissatisfaied
+    
+
+
+
+
     
 
 def evolve(M,boundary='wrap'):
@@ -54,26 +76,32 @@ def evolve(M,boundary='wrap'):
     dissatisfaction = a_dissatisfaction + b_dissatisfaction
     cordenates = np.where(dissatisfaction == True)
     index = np.vstack((cordenates[0], cordenates[1])).T
+    if (np.size(index,axis=0) == 0):
+        return M
     random_number = np.random.randint(np.size(index,axis=0),size=1)
     random_index = index[random_number][0]
     cordenates_vacant = np.where((M == -1) == True)
     index_vacants = np.vstack((cordenates_vacant[0], cordenates_vacant[1])).T
     agent_tipe = M[random_index[0]][random_index[1]]
-    for ii in index_vacants:
+    foundit = False
+    counter = 0
+    while (not (foundit == True)) and (counter < np.size(index_vacants,axis=0)):
+        neight_dissatisfaied = check_happines_neighborhod(M,index_vacants[counter],agent_tipe,random_index)
         if (agent_tipe == 0):
-            position_a_neights = a_neights[ii[0]][ii[1]]
-            position_neights = neights[ii[0]][ii[1]]
-            if (position_a_neights/position_neights >= sim_t):
+            position_a_neights = a_neights[index_vacants[counter][0]][index_vacants[counter][1]]
+            position_neights = neights[index_vacants[counter][0]][index_vacants[counter][1]]
+            if (position_a_neights/position_neights >= sim_t) and (neight_dissatisfaied == False):
                 M[random_index[0]][random_index[1]] = -1
-                M[ii[0]][ii[1]] = 0
-                break
+                M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
+                foundit = True
         else:
-            position_b_neights = b_neights[ii[0]][ii[1]]
-            position_neights = neights[ii[0]][ii[1]]
-            if (position_b_neights/position_neights >= sim_t):
+            position_b_neights = b_neights[index_vacants[counter][0]][index_vacants[counter][1]]
+            position_neights = neights[index_vacants[counter][0]][index_vacants[counter][1]]
+            if (position_b_neights/position_neights >= sim_t) and (neight_dissatisfaied == False):
                 M[random_index[0]][random_index[1]] = -1
-                M[ii[0]][ii[1]] = 0
-                break
+                M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
+                foundit = True
+        counter += 1
 
     return M
 def get_mean_similarity_ratio(M,boundary='wrap'):
