@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.signal import convolve2d as convolve
-
+import time
 # Gloval variables of the simulation
-N = 20
+N = 60
 sim_t = 0.4
 empty = 0.1
 A_to_B = 1
@@ -112,14 +112,20 @@ def get_mean_dissatisfaction(M,boundary='wrap'):
 
     return (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
 
+start_time = time.time()
 M = rand_init(N,empty,A_to_B)
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
-for i in range(100000):
+print((M==-1).sum())
+for i in range(51000):
     M = evolve(M)
-
+    if (dissatisfacton == 0):
+        break
+print((M==-1).sum())
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity final = {} /dissatisfaction final = {}".format(similarity,dissatisfacton))
+print("--- %s seconds ---" % (time.time() - start_time))
+
 

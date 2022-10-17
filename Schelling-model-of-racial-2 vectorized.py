@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.signal import convolve2d as convolve
-
+import time
 # Gloval variables of the simulation
-N = 20
+N = 60
 sim_t = 0.4
 empty = 0.1
 A_to_B = 1
@@ -50,41 +50,27 @@ def evolve(M,boundary='wrap'):
     cordenates_vacant = np.where((M == -1) == True)
     index_vacants = np.vstack((cordenates_vacant[0], cordenates_vacant[1])).T
     agent_tipe = M[random_index[0]][random_index[1]]
-    foundit = False
-    counter = 0
-    while (not (foundit == True)) and (counter < np.size(index_vacants,axis=0)):
-        if (agent_tipe == 0):
-            position_a_neights = a_neights[index_vacants[counter][0]][index_vacants[counter][1]]
-            position_neights = neights[index_vacants[counter][0]][index_vacants[counter][1]]
-            if (position_a_neights/position_neights >= sim_t):
-                M[random_index[0]][random_index[1]] = -1
-                M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
-                foundit = True
-        else:
-            position_b_neights = b_neights[index_vacants[counter][0]][index_vacants[counter][1]]
-            position_neights = neights[index_vacants[counter][0]][index_vacants[counter][1]]
-            if (position_b_neights/position_neights >= sim_t):
-                M[random_index[0]][random_index[1]] = -1
-                M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
-                foundit = True
-        counter += 1
-    """
-    for ii in index_vacants:
-        if (agent_tipe == 0):
-            position_a_neights = a_neights[ii[0]][ii[1]]
-            position_neights = neights[ii[0]][ii[1]]
-            if (position_a_neights/position_neights >= sim_t):
-                M[random_index[0]][random_index[1]] = -1
-                M[ii[0]][ii[1]] = 0
-                break
-        else:
-            position_b_neights = b_neights[ii[0]][ii[1]]
-            position_neights = neights[ii[0]][ii[1]]
-            if (position_b_neights/position_neights >= sim_t):
-                M[random_index[0]][random_index[1]] = -1
-                M[ii[0]][ii[1]] = 0
-                break
-    """
+    Y = np.transpose(index_vacants)[0]
+    X = np.transpose(index_vacants)[1]
+    if (agent_tipe == 0 ):
+        a_neights_vacants = a_neights[Y,X]
+        neights_vacants = neights[Y,X]
+        satisfaying_vacants = (a_neights_vacants/neights_vacants >= sim_t)
+        array_of_good_vacants = np.where(satisfaying_vacants == True)
+        move_to = index_vacants[array_of_good_vacants[0][0]]
+        M[random_index[0]][random_index[1]] = -1
+        M[move_to[0]][move_to[1]] = 0
+
+    else:
+        b_neights_vacants = b_neights[Y,X]
+        neights_vacants = neights[Y,X]
+        satisfaying_vacants = (b_neights_vacants/neights_vacants >= sim_t)
+        array_of_good_vacants = np.where(satisfaying_vacants == True)
+        move_to = index_vacants[array_of_good_vacants[0][0]]
+        M[random_index[0]][random_index[1]] = -1
+        M[move_to[0]][move_to[1]] = 1
+ 
+    
     return M
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
@@ -111,15 +97,19 @@ def get_mean_dissatisfaction(M,boundary='wrap'):
     n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
 
     return (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
-
+start_time = time.time()
 M = rand_init(N,empty,A_to_B)
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
-for i in range(100000):
+print((M==-1).sum())
+for i in range(51000):
     M = evolve(M)
-
+    if (dissatisfacton == 0):
+        break
+print((M==-1).sum())
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity final = {} /dissatisfaction final = {}".format(similarity,dissatisfacton))
+print("--- %s seconds ---" % (time.time() - start_time))
 
