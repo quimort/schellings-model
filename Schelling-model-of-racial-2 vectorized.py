@@ -38,9 +38,13 @@ def evolve(M,boundary='wrap'):
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
-    a_dissatisfaction = (a_neights/neights < sim_t)&(M == 0)
-    b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
-    dissatisfaction = a_dissatisfaction + b_dissatisfaction
+    a_dissatisfaction_1 = np.where(((M==0)&(neights != 0)) ,a_neights/neights,3)
+    print(((M==0)&(neights != 0)))
+    b_dissatisfaction_1 = np.where(((M==1)&(neights != 0)) ,a_neights/neights,3)
+    a_dissatisfaction = (a_dissatisfaction_1 < sim_t)
+    b_dissatisfaction = (b_dissatisfaction_1 < sim_t)
+    vacant_dissatisfaction = (neights == 0)&(M != -1)
+    dissatisfaction = a_dissatisfaction + b_dissatisfaction +vacant_dissatisfaction
     cordenates = np.where(dissatisfaction == True)
     index = np.vstack((cordenates[0], cordenates[1])).T
     if (np.size(index,axis=0) == 0):
@@ -57,18 +61,20 @@ def evolve(M,boundary='wrap'):
         neights_vacants = neights[Y,X]
         satisfaying_vacants = (a_neights_vacants/neights_vacants >= sim_t)
         array_of_good_vacants = np.where(satisfaying_vacants == True)
-        move_to = index_vacants[array_of_good_vacants[0][0]]
-        M[random_index[0]][random_index[1]] = -1
-        M[move_to[0]][move_to[1]] = 0
+        if(len(array_of_good_vacants[0]) != 0):
+            move_to = index_vacants[array_of_good_vacants[0][0]]
+            M[random_index[0]][random_index[1]] = -1
+            M[move_to[0]][move_to[1]] = 0
 
     else:
         b_neights_vacants = b_neights[Y,X]
         neights_vacants = neights[Y,X]
         satisfaying_vacants = (b_neights_vacants/neights_vacants >= sim_t)
         array_of_good_vacants = np.where(satisfaying_vacants == True)
-        move_to = index_vacants[array_of_good_vacants[0][0]]
-        M[random_index[0]][random_index[1]] = -1
-        M[move_to[0]][move_to[1]] = 1
+        if(len(array_of_good_vacants[0]) != 0):
+            move_to = index_vacants[array_of_good_vacants[0][0]]
+            M[random_index[0]][random_index[1]] = -1
+            M[move_to[0]][move_to[1]] = 1
  
     
     return M
@@ -78,9 +84,9 @@ def get_mean_similarity_ratio(M,boundary='wrap'):
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
-    n_similar_a = np.where(np.logical_and(M !=-1,M == 0),\
+    n_similar_a = np.where(np.logical_and(np.logical_and(M !=-1,M == 0),neights != 0),\
         a_neights/neights,0)
-    n_similar_b = np.where(np.logical_and(M !=-1,M == 1),\
+    n_similar_b = np.where(np.logical_and(np.logical_and(M !=-1,M == 1),neights != 0),\
          b_neights/neights,0)
     n_similar = np.sum((n_similar_a+n_similar_b))
     return n_similar/np.size(M)
@@ -91,8 +97,10 @@ def get_mean_dissatisfaction(M,boundary='wrap'):
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
-    a_dissatisfaction = (a_neights/neights < sim_t)&(M == 0)
-    b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
+    a_dissatisfaction_1 = np.where(np.logical_and(M==0,neights != 0),a_neights/neights,3)
+    b_dissatisfaction_1 = np.where(np.logical_and(M==1,neights != 0),a_neights/neights,3)
+    a_dissatisfaction = (a_dissatisfaction_1 < sim_t)
+    b_dissatisfaction = (b_dissatisfaction_1 < sim_t)
 
     n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
 
