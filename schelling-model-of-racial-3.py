@@ -3,7 +3,7 @@ import numpy as np
 from scipy.signal import convolve2d as convolve
 
 # Gloval variables of the simulation
-N = 7
+N = 20
 sim_t = 0.4
 empty = 0.1
 A_to_B = 1
@@ -30,24 +30,32 @@ def check_happines_neighborhod(M,new_position,type,old_position,boundary='wrap')
     new_M = M
     new_M[new_position[0]][new_position[1]] = type
     new_M[old_position[0]][old_position[1]] = -1
-    a_neights = convolve(new_M == 0,Kernel,**Kws)
-    b_neights = convolve(new_M == 1,Kernel,**Kws)
-    neights = convolve(new_M != -1,Kernel,**Kws)
-    Kernel2 = np.array([[[1,-1],[1,0],[1,1]],[[0,-1],[0,0],[0,1]],[[-1,-1],[-1,0],[-1,1]]])
+    a_neights = convolve(M == 0,Kernel,**Kws)
+    b_neights = convolve(M == 1,Kernel,**Kws)
+    neights = convolve(M != -1,Kernel,**Kws)
+    new_a_neights = convolve(new_M == 0,Kernel,**Kws)
+    new_b_neights = convolve(new_M == 1,Kernel,**Kws)
+    new_neights = convolve(new_M != -1,Kernel,**Kws)
+    Kernel2 = np.array([[1,-1],[1,0],[1,1],[0,-1],[0,1],[-1,-1],[-1,0],[-1,1]])
     possible_neights = Kernel2 + new_position
+    possible_neights = np.where(possible_neights >= np.size(M,axis=0),0,possible_neights)
     dissatisfaied = False
     counter = 0
     while (dissatisfaied != True) and (counter < np.size(possible_neights,axis=0)):
         neight_type = new_M[possible_neights[counter][0]][possible_neights[counter][1]]
         if (neight_type == 0):
+            new_position_a_neights = new_a_neights[possible_neights[counter][0]][possible_neights[counter][1]]
+            new_position_neights = new_neights[possible_neights[counter][0]][possible_neights[counter][1]]
             position_a_neights = a_neights[possible_neights[counter][0]][possible_neights[counter][1]]
             position_neights = neights[possible_neights[counter][0]][possible_neights[counter][1]]
-            dissatisfaied = (position_a_neights/position_neights <= sim_t)
+            dissatisfaied = (new_position_a_neights/new_position_neights < sim_t)&(position_a_neights/position_neights > sim_t)
         elif (neight_type == 1):
+            new_position_b_neights = new_b_neights[possible_neights[counter][0]][possible_neights[counter][1]]
+            new_position_neights = new_neights[possible_neights[counter][0]][possible_neights[counter][1]]
             position_b_neights = b_neights[possible_neights[counter][0]][possible_neights[counter][1]]
             position_neights = neights[possible_neights[counter][0]][possible_neights[counter][1]]
-            dissatisfaied = (position_b_neights/position_neights <= sim_t)
-        count += 1
+            dissatisfaied = (new_position_b_neights/new_position_neights <= sim_t)&(position_b_neights/position_neights > sim_t)
+        counter += 1
     
     return dissatisfaied
     
@@ -131,17 +139,16 @@ def get_mean_dissatisfaction(M,boundary='wrap'):
     return (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
 
 M = rand_init(N,empty,A_to_B)
-posico = np.array([0,3])
-check_happines_neighborhod(M,posico)
-"""
+
+
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
-for i in range(5000):
+for i in range(50000):
     M = evolve(M)
 
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity final = {} /dissatisfaction final = {}".format(similarity,dissatisfacton))
-"""
+
 
