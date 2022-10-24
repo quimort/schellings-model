@@ -1,9 +1,8 @@
-from itertools import count
 import numpy as np
 from scipy.signal import convolve2d as convolve
 
 # Gloval variables of the simulation
-N = 20
+N = 60
 sim_t = 0.4
 empty = 0.1
 A_to_B = 1
@@ -138,17 +137,23 @@ def get_mean_dissatisfaction(M,boundary='wrap'):
 
     return (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
 
-M = rand_init(N,empty,A_to_B)
 
-
-similarity = get_mean_similarity_ratio(M)
-dissatisfacton = get_mean_dissatisfaction(M)
-print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
-for i in range(50000):
-    M = evolve(M)
-
-similarity = get_mean_similarity_ratio(M)
-dissatisfacton = get_mean_dissatisfaction(M)
-print("similarity final = {} /dissatisfaction final = {}".format(similarity,dissatisfacton))
+f = open("valuesfor_01.csv", "w")
+f.write("similarity ratio;mean dissatisfaction")
+f.close
+for ii in range(0,100):
+    M = rand_init(N,empty,A_to_B)
+    similarity = get_mean_similarity_ratio(M)
+    dissatisfacton = get_mean_dissatisfaction(M)
+    for i in range(5100):
+        M = evolve(M)
+        if (get_mean_dissatisfaction(M) == 0):
+            break
+    similarity = get_mean_similarity_ratio(M)
+    dissatisfacton = get_mean_dissatisfaction(M)
+    f = open("valuesfor_01.csv", "a")
+    f.write("\n")
+    f.write("{};{}".format(similarity,dissatisfacton))
+    f.close
 
 

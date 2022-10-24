@@ -117,12 +117,10 @@ M = rand_init(N,empty,A_to_B)
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
-print((M==-1).sum())
 for i in range(51000):
     M = evolve(M)
-    if (dissatisfacton == 0):
+    if (get_mean_dissatisfaction(M) == 0):
         break
-print((M==-1).sum())
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity final = {} /dissatisfaction final = {}".format(similarity,dissatisfacton))
