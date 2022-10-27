@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.signal import convolve2d as convolve
-
+import time
 # Gloval variables of the simulation
 N = 60
 sim_t = 0.4
@@ -80,11 +80,13 @@ def evolve(M,boundary='wrap'):
     neights = convolve(M != -1,Kernel,**Kws)
     a_dissatisfaction = (a_neights/neights < sim_t)&(M == 0)
     b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
-    dissatisfaction = a_dissatisfaction + b_dissatisfaction
-    cordenates = np.where(dissatisfaction == True)
+    cordenates_a = np.where(a_dissatisfaction == True)
+    cordenates_b = np.where(b_dissatisfaction == True)
+    cordenates = cordenates_a + cordenates_b
     index = np.vstack((cordenates[0], cordenates[1])).T
+    blocked = False
     if (np.size(index,axis=0) == 0):
-        return M
+        return M,blocked
     random_number = np.random.randint(np.size(index,axis=0),size=1)
     random_index = index[random_number][0]
     cordenates_vacant = np.where((M == -1) == True)
@@ -93,14 +95,15 @@ def evolve(M,boundary='wrap'):
     foundit = False
     counter = 0
     while (not (foundit == True)) and (counter < np.size(index_vacants,axis=0)):
-        neight_dissatisfaied = check_happines_neighborhod(M,index_vacants[counter],agent_tipe,random_index)
         if (agent_tipe == 0):
             position_a_neights = a_neights[index_vacants[counter][0]][index_vacants[counter][1]]
             position_neights = neights[index_vacants[counter][0]][index_vacants[counter][1]]
-            if (position_a_neights/position_neights >= sim_t) and (neight_dissatisfaied == False):
-                M[random_index[0]][random_index[1]] = -1
-                M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
-                foundit = True
+            if (position_a_neights/position_neights >= sim_t) :
+                neight_dissatisfaied = check_happines_neighborhod(M,index_vacants[counter],agent_tipe,random_index)
+                if(neight_dissatisfaied == False):
+                    M[random_index[0]][random_index[1]] = -1
+                    M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
+                    foundit = True
         else:
             position_b_neights = b_neights[index_vacants[counter][0]][index_vacants[counter][1]]
             position_neights = neights[index_vacants[counter][0]][index_vacants[counter][1]]
@@ -109,8 +112,36 @@ def evolve(M,boundary='wrap'):
                 M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
                 foundit = True
         counter += 1
-
-    return M
+    if(foundit == False):
+        if (agent_tipe == 0):
+            index_test = np.vstack((cordenates_b[0], cordenates_b[1])).T
+            cordenate_test = index_test[0][0]
+            for vacant in index_vacants:
+                position_b_neights = b_neights[vacant[0]][vacant[1]]
+                position_neights = neights[vacant[0]][vacant[1]]
+                if (position_b_neights/position_neights >= sim_t) :
+                    neight_dissatisfaied = check_happines_neighborhod(M,vacant,agent_tipe,cordenate_test)
+                    if(neight_dissatisfaied == False):
+                        M[cordenate_test[0]][cordenate_test[1]] = -1
+                        M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
+                        foundit = True
+                        break
+        else:
+            index_test = np.vstack((cordenates_a[0], cordenates_a[1])).T
+            cordenate_test = index_test[0][0]
+            for vacant in index_vacants:
+                position_a_neights = a_neights[vacant[0]][vacant[1]]
+                position_neights = neights[vacant[0]][vacant[1]]
+                if (position_a_neights/position_neights >= sim_t) :
+                    neight_dissatisfaied = check_happines_neighborhod(M,vacant,agent_tipe,cordenate_test)
+                    if(neight_dissatisfaied == False):
+                        M[cordenate_test[0]][cordenate_test[1]] = -1
+                        M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
+                        foundit = True
+                        break   
+        if(foundit == False):
+            blocked = True         
+    return M,blocked
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
     Kws = dict(mode='same',boundary=boundary)
@@ -137,7 +168,8 @@ def get_mean_dissatisfaction(M,boundary='wrap'):
 
     return (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
 
-
+start_time = time.time()
+blocked = False
 f = open("valuesfor_01.csv", "w")
 f.write("similarity ratio;mean dissatisfaction")
 f.close
@@ -145,9 +177,9 @@ for ii in range(0,100):
     M = rand_init(N,empty,A_to_B)
     similarity = get_mean_similarity_ratio(M)
     dissatisfacton = get_mean_dissatisfaction(M)
-    for i in range(5100):
-        M = evolve(M)
-        if (get_mean_dissatisfaction(M) == 0):
+    for i in range(1000):
+        M,blocked = evolve(M)
+        if (get_mean_dissatisfaction(M) == 0) and (blocked == True):
             break
     similarity = get_mean_similarity_ratio(M)
     dissatisfacton = get_mean_dissatisfaction(M)
@@ -155,5 +187,6 @@ for ii in range(0,100):
     f.write("\n")
     f.write("{};{}".format(similarity,dissatisfacton))
     f.close
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 
