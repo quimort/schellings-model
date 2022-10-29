@@ -1,10 +1,11 @@
+from itertools import count
 import numpy as np
 from scipy.signal import convolve2d as convolve
 import time
 # Gloval variables of the simulation
-N = 20
-sim_t = 0.4
-empty = 0.1
+N = 60
+sim_t = 0.5
+empty = 0.01
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
 epsilon = 0.00001
@@ -49,16 +50,15 @@ def evolve(M,boundary='wrap'):
     b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
     n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
     dissatisfaction_n = (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
-    cordenates_a = np.where(a_dissatisfaction == True)
-    cordenates_b = np.where(b_dissatisfaction == True)
-    cordenates = cordenates_a + cordenates_b
-    index = np.vstack((cordenates[0], cordenates[1])).T
-    if (np.size(index,axis=0) == 0):
+    cordenates_a = np.argwhere(a_dissatisfaction)
+    cordenates_b = np.argwhere(b_dissatisfaction)
+    cordenates = np.concatenate((cordenates_a,cordenates_b),axis = 0)
+    if (np.size(cordenates,axis=0) == 0):
+        bloked = True
         return M,dissatisfaction_n
-    random_number = np.random.randint(np.size(index,axis=0),size=1)
-    random_index = index[random_number][0]
-    cordenates_vacant = np.where((M == -1) == True)
-    index_vacants = np.vstack((cordenates_vacant[0], cordenates_vacant[1])).T
+    random_number = np.random.randint(np.size(cordenates,axis=0),size=1)
+    random_index = cordenates[random_number][0]
+    index_vacants = np.argwhere(M == -1)
     agent_tipe = M[random_index[0]][random_index[1]]
     Y = np.transpose(index_vacants)[0]
     X = np.transpose(index_vacants)[1]
@@ -90,39 +90,40 @@ def evolve(M,boundary='wrap'):
             blocks[1] = True
     if(blocks[0] == True):
         "a agents are blocked"
-        index_test = np.vstack((cordenates_b[0], cordenates_b[1])).T
-        cordenate_test = index_test[0]
-        b_neights_vacants = b_neights[Y,X]
-        neights_vacants = neights[Y,X]
-        b_neights_vacants = b_neights_vacants + epsilon
-        neights_vacants = neights_vacants +epsilon
-        satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
-        if(True in satisfaying_vacants_b):
-            array_of_good_vacants = np.where(satisfaying_vacants_b == True)
-            move_to = index_vacants[array_of_good_vacants[0][0]]
-            M[cordenate_test[0]][cordenate_test[1]] = -1
-            M[move_to[0]][move_to[1]] = 1
-        if( True not in satisfaying_vacants_b):
-            blocks[1] = True
+        index_test = cordenates_b
+        if(np.size(index_test,axis=0) != 0):
+            cordenate_test = index_test[0]
+            b_neights_vacants = b_neights[Y,X]
+            neights_vacants = neights[Y,X]
+            b_neights_vacants = b_neights_vacants + epsilon
+            neights_vacants = neights_vacants +epsilon
+            satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
+            if(True in satisfaying_vacants_b):
+                array_of_good_vacants = np.where(satisfaying_vacants_b == True)
+                move_to = index_vacants[array_of_good_vacants[0][0]]
+                M[cordenate_test[0]][cordenate_test[1]] = -1
+                M[move_to[0]][move_to[1]] = 1
+            if( True not in satisfaying_vacants_b):
+                blocks[1] = True
     if(blocks[1] == True):
         "b agents are blocked"
-        index_test = np.vstack((cordenates_a[0], cordenates_a[1])).T
-        cordenate_test = index_test[0][0]
-        a_neights_vacants = a_neights[Y,X]
-        neights_vacants = neights[Y,X]
-        a_neights_vacants = a_neights_vacants + epsilon
-        neights_vacants = neights_vacants +epsilon
-        satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
-        if(True in satisfaying_vacants_a):
-            array_of_good_vacants = np.where(satisfaying_vacants_a == True)
-            move_to = index_vacants[array_of_good_vacants[0][0]]
-            M[cordenate_test[0]][cordenate_test[1]] = -1
-            M[move_to[0]][move_to[1]] = 1
-        if( True not in satisfaying_vacants_a):
-            blocks[0] = True
+        index_test = cordenates_a
+        if(np.size(index_test,axis=0) != 0):
+            cordenate_test = index_test[0]
+            a_neights_vacants = a_neights[Y,X]
+            neights_vacants = neights[Y,X]
+            a_neights_vacants = a_neights_vacants + epsilon
+            neights_vacants = neights_vacants +epsilon
+            satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
+            if(True in satisfaying_vacants_a):
+                array_of_good_vacants = np.where(satisfaying_vacants_a == True)
+                move_to = index_vacants[array_of_good_vacants[0][0]]
+                M[cordenate_test[0]][cordenate_test[1]] = -1
+                M[move_to[0]][move_to[1]] = 1
+            if( True not in satisfaying_vacants_a):
+                blocks[0] = True
     if(blocks[0] == True and blocks[1] == True):
        bloked= True
-    print(dissatisfaction_n)
     return M,dissatisfaction_n
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
@@ -152,20 +153,39 @@ def get_mean_dissatisfaction(M,boundary='wrap'):
     a_dissatisfaction = (a_neights/neights < sim_t)&(M == 0)
     b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
     n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
-
     return (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
+
+def mean_interratial_pears(M,boundary='wrap'):
+    Kws = dict(mode='same',boundary=boundary)
+    a_neights = convolve(M == 0,Kernel,**Kws)
+    b_neights = convolve(M == 1,Kernel,**Kws)
+    a_positions = np.argwhere(M == 1) 
+    Y = np.transpose(a_positions)[0]
+    X = np.transpose(a_positions)[1]
+    b_neights_pears = b_neights[Y,X]
+    b_positions = np.argwhere(M == 0)
+    Y = np.transpose(b_positions)[0]
+    X = np.transpose(b_positions)[1]
+    a_neight_pears = a_neights
+    interratial_pears = b_neights_pears.sum() + a_neight_pears.sum()
+    return (interratial_pears/(np.size(M)*8))
 start_time = time.time()
 M = rand_init(N,empty,A_to_B)
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
 print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
 continua = True
+counter = 0
 while(continua):
     M,dissatisfaction_n = evolve(M)
+    counter += 1
     if (dissatisfaction_n == 0 or bloked == True):
         continua = False
 similarity = get_mean_similarity_ratio(M)
 dissatisfacton = get_mean_dissatisfaction(M)
-print("similarity final = {} /dissatisfaction final = {}".format(similarity,dissatisfacton))
+mean_interratial = mean_interratial_pears(M)
+print("similarity final = {} /dissatisfaction final = {} / mean inerratial pears = {}"\
+    .format(similarity,dissatisfacton,mean_interratial))
+print("number of iterations = {}".format(counter))
 print("--- %s seconds ---" % (time.time() - start_time))
 
