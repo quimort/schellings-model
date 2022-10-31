@@ -173,11 +173,11 @@ blocked = False
 f = open("valuesfor_01.csv", "w")
 f.write("similarity ratio;mean dissatisfaction")
 f.close
-for ii in range(0,100):
+for ii in range(0,1):
     M = rand_init(N,empty,A_to_B)
     similarity = get_mean_similarity_ratio(M)
     dissatisfacton = get_mean_dissatisfaction(M)
-    for i in range(1000):
+    for i in range(51000):
         M,blocked = evolve(M)
         if (get_mean_dissatisfaction(M) == 0) and (blocked == True):
             break

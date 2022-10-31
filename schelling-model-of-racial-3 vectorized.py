@@ -5,7 +5,7 @@ import time
 # Gloval variables of the simulation
 N = 60
 sim_t = 0.5
-empty = 0.01
+empty = 0.7
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
 epsilon = 0.00001
@@ -30,31 +30,46 @@ def rand_init(N,empty,a_to_b):
 
 def check_happines_neighborhod(M,new_positions,type,old_position,boundary='wrap'):
     Kws = dict(mode='same',boundary=boundary)
-    valid_vacant = np.zeros(np.size(new_positions),dtype=bool)
+    dissatisfaied_vacant = np.zeros(np.size(new_positions,axis=0),dtype=bool)
+    a_neights = convolve(M == 0,Kernel,**Kws)
+    b_neights = convolve(M == 1,Kernel,**Kws)
+    neights = convolve(M != -1,Kernel,**Kws)
     contador = 0
     for vacant in new_positions:
         new_M = M
         new_M[vacant[0]][vacant[1]] = type
         new_M[old_position[0]][old_position[1]] = -1
-        a_neights = convolve(new_M == 0,Kernel,**Kws)
-        b_neights = convolve(new_M == 1,Kernel,**Kws)
-        neights = convolve(new_M != -1,Kernel,**Kws)
-        Kernel2 = np.array([[[1,-1],[1,0],[1,1]],[[0,-1],[0,0],[0,1]],[[-1,-1],[-1,0],[-1,1]]])
+        new_a_neights = convolve(new_M == 0,Kernel,**Kws)
+        new_b_neights = convolve(new_M == 1,Kernel,**Kws)
+        new_neights = convolve(new_M != -1,Kernel,**Kws)
+        Kernel2 = np.array([[1,-1],[1,0],[1,1],[0,-1],[0,1],[-1,-1],[-1,0],[-1,1]])
         possible_neights = Kernel2 + vacant
+        possible_neights = np.where(possible_neights >= np.size(M,axis=0),0,possible_neights)
         Y = np.transpose(possible_neights)[0]
         X = np.transpose(possible_neights)[1]
         positon_type = new_M[Y,X]
-        position_a_neights = a_neights[Y,X]
-        position_b_neights = b_neights[Y,X]
-        position_all_neights = neights[Y,X]
-        if_type_a_satisfied = (position_a_neights/position_all_neights >= sim_t)&(positon_type == 0)
-        if_type_b_satisfied = (position_b_neights/position_all_neights >= sim_t)&(positon_type == 0)
-        satisfactory = (if_type_a_satisfied == True)|(if_type_b_satisfied == True)
-        if(False not in satisfactory):
-            valid_vacant[contador] = True 
+        position_a_neights = new_a_neights[Y,X]
+        position_b_neights = new_b_neights[Y,X]
+        position_all_neights = new_neights[Y,X]
+        position_a_neights = position_a_neights +epsilon
+        position_b_neights = position_b_neights +epsilon
+        position_all_neights = position_all_neights +epsilon
+        old_a_neights = a_neights[Y,X]
+        old_b_neights = b_neights[Y,X]
+        old_neights = neights[Y,X]
+        old_a_neights = old_a_neights +epsilon
+        old_b_neights = old_b_neights +epsilon
+        old_neights = old_neights +epsilon
+        if_type_a_dissatisfied = (position_a_neights/position_all_neights < sim_t)&(positon_type == 0)\
+            &(old_a_neights/old_neights >= sim_t)
+        if_type_b_dissatisfied = (position_b_neights/position_all_neights < sim_t)&(positon_type == 1)\
+            &(old_b_neights/old_neights >= sim_t)
+        dissatisfactory = (if_type_a_dissatisfied == True)|(if_type_b_dissatisfied == True)
+        if(True in dissatisfactory):
+            dissatisfaied_vacant[contador] = True 
         contador += 1
     
-    return valid_vacant
+    return dissatisfaied_vacant
     
 
 def evolve(M,boundary='wrap'):
@@ -93,13 +108,13 @@ def evolve(M,boundary='wrap'):
     Y = np.transpose(index_vacants)[0]
     X = np.transpose(index_vacants)[1]
     if (agent_tipe == 0 ):
-        valid_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
+        dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
         a_neights_vacants = a_neights[Y,X]
         neights_vacants = neights[Y,X]
         a_neights_vacants = a_neights_vacants + epsilon
         neights_vacants = neights_vacants +epsilon
         satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
-        satisfaying_vacants_a = (satisfaying_vacants_a)&(valid_vacant)
+        satisfaying_vacants_a = (satisfaying_vacants_a == True)&(dissatisfaied_vacant == False)
         if(True in satisfaying_vacants_a):
             array_of_good_vacants = np.where(satisfaying_vacants_a == True)
             move_to = index_vacants[array_of_good_vacants[0][0]]
@@ -108,13 +123,13 @@ def evolve(M,boundary='wrap'):
         if( True not in satisfaying_vacants_a):
             blocks[0] = True
     else:
-        valid_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
+        dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
         b_neights_vacants = b_neights[Y,X]
         neights_vacants = neights[Y,X]
         b_neights_vacants = b_neights_vacants + epsilon
         neights_vacants = neights_vacants +epsilon
         satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
-        satisfaying_vacants_b = (satisfaying_vacants_b)&(valid_vacant)
+        satisfaying_vacants_b = (satisfaying_vacants_b == True)&(dissatisfaied_vacant == False)
         if(True in satisfaying_vacants_b):
             array_of_good_vacants = np.where(satisfaying_vacants_b == True)
             move_to = index_vacants[array_of_good_vacants[0][0]]
@@ -131,9 +146,9 @@ def evolve(M,boundary='wrap'):
             neights_vacants = neights[Y,X]
             b_neights_vacants = b_neights_vacants + epsilon
             neights_vacants = neights_vacants +epsilon
-            valid_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
+            dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
             satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
-            satisfaying_vacants_b = (satisfaying_vacants_b)&(valid_vacant)
+            satisfaying_vacants_b = (satisfaying_vacants_b == True)&(dissatisfaied_vacant == False)
             if(True in satisfaying_vacants_b):
                 array_of_good_vacants = np.where(satisfaying_vacants_b == True)
                 move_to = index_vacants[array_of_good_vacants[0][0]]
@@ -150,9 +165,9 @@ def evolve(M,boundary='wrap'):
             neights_vacants = neights[Y,X]
             a_neights_vacants = a_neights_vacants + epsilon
             neights_vacants = neights_vacants +epsilon
-            valid_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
+            dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
             satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
-            satisfaying_vacants_a = (satisfaying_vacants_a)&(valid_vacant)
+            satisfaying_vacants_a = (satisfaying_vacants_a == True)&(dissatisfaied_vacant == False)
             if(True in satisfaying_vacants_a):
                 array_of_good_vacants = np.where(satisfaying_vacants_a == True)
                 move_to = index_vacants[array_of_good_vacants[0][0]]
