@@ -11,6 +11,8 @@ Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
 epsilon = 0.00001
 bloked = False
 blocks= np.array([False,False])
+Kernel2 = np.array([[2,-2],[2,-1],[2,0],[2,1],[2,2],[1,-2],[1,-1],[1,0],[1,1],[1,2],[0,-2],[0,-1],[0,0],[0,1],[0,2],[-1,-2],[-1,-1],[-1,0],[-1,1],[-1,2]\
+    ,[-2,-2],[-2,-1],[-2,0],[-2,1],[-2,2]])
 
 def rand_init(N,empty,a_to_b):
     """ Random grid initialitzation
@@ -35,14 +37,14 @@ def check_happines_neighborhod(M,new_positions,type,old_position,boundary='wrap'
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
     contador = 0
+    """
     for vacant in new_positions:
-        new_M = M
+        new_M = M.copy()
         new_M[vacant[0]][vacant[1]] = type
         new_M[old_position[0]][old_position[1]] = -1
         new_a_neights = convolve(new_M == 0,Kernel,**Kws)
         new_b_neights = convolve(new_M == 1,Kernel,**Kws)
         new_neights = convolve(new_M != -1,Kernel,**Kws)
-        Kernel2 = np.array([[1,-1],[1,0],[1,1],[0,-1],[0,1],[-1,-1],[-1,0],[-1,1]])
         possible_neights = Kernel2 + vacant
         possible_neights = np.where(possible_neights >= np.size(M,axis=0),0,possible_neights)
         Y = np.transpose(possible_neights)[0]
@@ -68,7 +70,35 @@ def check_happines_neighborhod(M,new_positions,type,old_position,boundary='wrap'
         if(True in dissatisfactory):
             dissatisfaied_vacant[contador] = True 
         contador += 1
-    
+    """
+    for vacant in new_positions:
+        possible_neights = Kernel2 + vacant
+        possible_neights = np.where(possible_neights >= np.size(M,axis=0),0,possible_neights)
+        Y = np.transpose(possible_neights)[0]
+        X = np.transpose(possible_neights)[1]
+        positon_type = M[Y,X]
+        positon_type = positon_type.reshape(5,5)
+        positon_type[2][2]=type
+        position_a_neights = convolve(positon_type == 0,Kernel,**Kws)
+        position_b_neights = convolve(positon_type == 1,Kernel,**Kws)
+        position_all_neights = convolve(positon_type != -1,Kernel,**Kws)
+        position_a_neights = position_a_neights +epsilon
+        position_b_neights = position_b_neights +epsilon
+        position_all_neights = position_all_neights +epsilon
+        old_a_neights = a_neights[Y,X].reshape(5,5)
+        old_b_neights = b_neights[Y,X].reshape(5,5)
+        old_neights = neights[Y,X].reshape(5,5)
+        old_a_neights = old_a_neights +epsilon
+        old_b_neights = old_b_neights +epsilon
+        old_neights = old_neights +epsilon
+        if_type_a_dissatisfied = (position_a_neights/position_all_neights < sim_t)&(positon_type == 0)\
+            &(old_a_neights/old_neights >= sim_t)
+        if_type_b_dissatisfied = (position_b_neights/position_all_neights < sim_t)&(positon_type == 1)\
+            &(old_b_neights/old_neights >= sim_t)
+        dissatisfactory = (if_type_a_dissatisfied == True)|(if_type_b_dissatisfied == True)
+        if(True in dissatisfactory):
+            dissatisfaied_vacant[contador] = True 
+        contador += 1
     return dissatisfaied_vacant
     
 
@@ -98,6 +128,7 @@ def evolve(M,boundary='wrap'):
     cordenates_a = np.argwhere(a_dissatisfaction)
     cordenates_b = np.argwhere(b_dissatisfaction)
     cordenates = np.concatenate((cordenates_a,cordenates_b),axis = 0)
+    print(np.size(cordenates,axis=0))
     if (np.size(cordenates,axis=0) == 0):
         bloked = True
         return M,dissatisfaction_n

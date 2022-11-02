@@ -5,7 +5,7 @@ import time
 # Gloval variables of the simulation
 N = 60
 sim_t = 0.5
-empty = 0.01
+empty = 0.1
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
 epsilon = 0.00001
@@ -53,6 +53,7 @@ def evolve(M,boundary='wrap'):
     cordenates_a = np.argwhere(a_dissatisfaction)
     cordenates_b = np.argwhere(b_dissatisfaction)
     cordenates = np.concatenate((cordenates_a,cordenates_b),axis = 0)
+    print(np.size(cordenates,axis=0))
     if (np.size(cordenates,axis=0) == 0):
         bloked = True
         return M,dissatisfaction_n
