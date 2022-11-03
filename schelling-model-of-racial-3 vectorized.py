@@ -2,15 +2,15 @@ from itertools import count
 import numpy as np
 from scipy.signal import convolve2d as convolve
 import time
+from multiprocessing import Pool
+from functools import partial
+from itertools import repeat
 # Gloval variables of the simulation
 N = 60
 sim_t = 0.5
-empty = 0.7
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
 epsilon = 0.00001
-bloked = False
-blocks= np.array([False,False])
 Kernel2 = np.array([[2,-2],[2,-1],[2,0],[2,1],[2,2],[1,-2],[1,-1],[1,0],[1,1],[1,2],[0,-2],[0,-1],[0,0],[0,1],[0,2],[-1,-2],[-1,-1],[-1,0],[-1,1],[-1,2]\
     ,[-2,-2],[-2,-1],[-2,0],[-2,1],[-2,2]])
 
@@ -70,7 +70,7 @@ def check_happines_neighborhod(M,new_positions,type,old_position,boundary='wrap'
     return dissatisfaied_vacant
     
 
-def evolve(M,boundary='wrap'):
+def evolve(M,bloked,blocks,boundary='wrap'):
     """
     Args:
         M(numpy.array): the matrix to be evolved
@@ -81,8 +81,6 @@ def evolve(M,boundary='wrap'):
     then the individual moves to an empty house. 
     """
     Kws = dict(mode='same',boundary=boundary)
-    global blocks 
-    global bloked 
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
@@ -175,7 +173,7 @@ def evolve(M,boundary='wrap'):
                 blocks[0] = True
     if(blocks[0] == True and blocks[1] == True):
        bloked= True
-    return M,dissatisfaction_n
+    return M,dissatisfaction_n,bloked,blocks
 
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
@@ -221,38 +219,35 @@ def mean_interratial_pears(M,boundary='wrap'):
     a_neight_pears = a_neights
     interratial_pears = b_neights_pears.sum() + a_neight_pears.sum()
     return (interratial_pears/(np.size(M)*8))
-start_time = time.time()
-emptines = np.linspace(0.001,0.9,180)
-f = open("schelling_values_100.csv", "w")
-f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial\
-    ;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
-f.close
-for i in emptines:
-    empty = i
-    for ii in range(100):
-        M = rand_init(N,empty,A_to_B)
-        similarity_1 = get_mean_similarity_ratio(M)
-        dissatisfacton_1 = get_mean_dissatisfaction(M)
-        mean_interratial_1 = mean_interratial_pears(M)
-        continua = True
-        bloked = False
-        blocks[0] = False
-        blocks[1] = False
-        counter = 0
-        while(continua):
-            M,dissatisfaction_n = evolve(M)
-            counter += 1
-            if (dissatisfaction_n == 0 or bloked == True):
-                continua = False
-        similarity = get_mean_similarity_ratio(M)
-        dissatisfacton = get_mean_dissatisfaction(M)
-        mean_interratial = mean_interratial_pears(M)
-        f = open("schelling_values_100.csv", "a")
-        f.write("\n")
-        f.write("{};{};{};{};{};{};{};{}".format(empty,similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter))
-        f.close
 
+def start(arg):
+    empty = 0.2
+    M = rand_init(N,empty,A_to_B)
+    similarity_1 = get_mean_similarity_ratio(M)
+    dissatisfacton_1 = get_mean_dissatisfaction(M)
+    mean_interratial_1 = mean_interratial_pears(M)
+    continua = True
+    bloked = False
+    blocks = np.array([False,False])
+    counter = 0
+    while(continua):
+        M,dissatisfaction_n,bloked,blocks = evolve(M,bloked,blocks)
+        counter += 1
+        if (dissatisfaction_n == 0 or bloked == True):
+            continua = False
+    similarity = get_mean_similarity_ratio(M)
+    dissatisfacton = get_mean_dissatisfaction(M)
+    mean_interratial = mean_interratial_pears(M)
     f = open("schelling_values_100.csv", "a")
     f.write("\n")
-    f.write("\n")
+    f.write("{};{};{};{};{};{};{};{}".format(empty,similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter))
     f.close
+    return arg
+if __name__ == '__main__':
+    emptines = 0.2
+    f = open("schelling_values_100.csv", "w")
+    f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
+    f.close
+    items = [(i) for i in range(2)]
+    with Pool() as pool:
+        pool.map(start,items)
