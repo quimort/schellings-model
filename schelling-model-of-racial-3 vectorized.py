@@ -37,40 +37,7 @@ def check_happines_neighborhod(M,new_positions,type,old_position,boundary='wrap'
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
     contador = 0
-    """
-    for vacant in new_positions:
-        new_M = M.copy()
-        new_M[vacant[0]][vacant[1]] = type
-        new_M[old_position[0]][old_position[1]] = -1
-        new_a_neights = convolve(new_M == 0,Kernel,**Kws)
-        new_b_neights = convolve(new_M == 1,Kernel,**Kws)
-        new_neights = convolve(new_M != -1,Kernel,**Kws)
-        possible_neights = Kernel2 + vacant
-        possible_neights = np.where(possible_neights >= np.size(M,axis=0),0,possible_neights)
-        Y = np.transpose(possible_neights)[0]
-        X = np.transpose(possible_neights)[1]
-        positon_type = new_M[Y,X]
-        position_a_neights = new_a_neights[Y,X]
-        position_b_neights = new_b_neights[Y,X]
-        position_all_neights = new_neights[Y,X]
-        position_a_neights = position_a_neights +epsilon
-        position_b_neights = position_b_neights +epsilon
-        position_all_neights = position_all_neights +epsilon
-        old_a_neights = a_neights[Y,X]
-        old_b_neights = b_neights[Y,X]
-        old_neights = neights[Y,X]
-        old_a_neights = old_a_neights +epsilon
-        old_b_neights = old_b_neights +epsilon
-        old_neights = old_neights +epsilon
-        if_type_a_dissatisfied = (position_a_neights/position_all_neights < sim_t)&(positon_type == 0)\
-            &(old_a_neights/old_neights >= sim_t)
-        if_type_b_dissatisfied = (position_b_neights/position_all_neights < sim_t)&(positon_type == 1)\
-            &(old_b_neights/old_neights >= sim_t)
-        dissatisfactory = (if_type_a_dissatisfied == True)|(if_type_b_dissatisfied == True)
-        if(True in dissatisfactory):
-            dissatisfaied_vacant[contador] = True 
-        contador += 1
-    """
+    
     for vacant in new_positions:
         possible_neights = Kernel2 + vacant
         possible_neights = np.where(possible_neights >= np.size(M,axis=0),0,possible_neights)
@@ -79,15 +46,16 @@ def check_happines_neighborhod(M,new_positions,type,old_position,boundary='wrap'
         positon_type = M[Y,X]
         positon_type = positon_type.reshape(5,5)
         positon_type[2][2]=type
-        position_a_neights = convolve(positon_type == 0,Kernel,**Kws)
-        position_b_neights = convolve(positon_type == 1,Kernel,**Kws)
-        position_all_neights = convolve(positon_type != -1,Kernel,**Kws)
+        position_a_neights = (convolve(positon_type == 0,Kernel,**Kws))[1:4,1:4]
+        position_b_neights = (convolve(positon_type == 1,Kernel,**Kws))[1:4,1:4]
+        position_all_neights = (convolve(positon_type != -1,Kernel,**Kws))[1:4,1:4]
+        positon_type = positon_type[1:4,1:4]
         position_a_neights = position_a_neights +epsilon
         position_b_neights = position_b_neights +epsilon
         position_all_neights = position_all_neights +epsilon
-        old_a_neights = a_neights[Y,X].reshape(5,5)
-        old_b_neights = b_neights[Y,X].reshape(5,5)
-        old_neights = neights[Y,X].reshape(5,5)
+        old_a_neights = (a_neights[Y,X].reshape(5,5))[1:4,1:4]
+        old_b_neights = (b_neights[Y,X].reshape(5,5))[1:4,1:4]
+        old_neights = (neights[Y,X].reshape(5,5))[1:4,1:4]
         old_a_neights = old_a_neights +epsilon
         old_b_neights = old_b_neights +epsilon
         old_neights = old_neights +epsilon
@@ -128,7 +96,6 @@ def evolve(M,boundary='wrap'):
     cordenates_a = np.argwhere(a_dissatisfaction)
     cordenates_b = np.argwhere(b_dissatisfaction)
     cordenates = np.concatenate((cordenates_a,cordenates_b),axis = 0)
-    print(np.size(cordenates,axis=0))
     if (np.size(cordenates,axis=0) == 0):
         bloked = True
         return M,dissatisfaction_n
@@ -255,22 +222,37 @@ def mean_interratial_pears(M,boundary='wrap'):
     interratial_pears = b_neights_pears.sum() + a_neight_pears.sum()
     return (interratial_pears/(np.size(M)*8))
 start_time = time.time()
-M = rand_init(N,empty,A_to_B)
-similarity = get_mean_similarity_ratio(M)
-dissatisfacton = get_mean_dissatisfaction(M)
-print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
-continua = True
-counter = 0
-while(continua):
-    M,dissatisfaction_n = evolve(M)
-    counter += 1
-    if (dissatisfaction_n == 0 or bloked == True):
-        continua = False
-similarity = get_mean_similarity_ratio(M)
-dissatisfacton = get_mean_dissatisfaction(M)
-mean_interratial = mean_interratial_pears(M)
-print("similarity final = {} /dissatisfaction final = {} / mean inerratial pears = {}"\
-    .format(similarity,dissatisfacton,mean_interratial))
-print("number of iterations = {}".format(counter))
-print("--- %s seconds ---" % (time.time() - start_time))
+emptines = np.linspace(0.001,0.9,180)
+f = open("schelling_values_100.csv", "w")
+f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial\
+    ;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
+f.close
+for i in emptines:
+    empty = i
+    for ii in range(100):
+        M = rand_init(N,empty,A_to_B)
+        similarity_1 = get_mean_similarity_ratio(M)
+        dissatisfacton_1 = get_mean_dissatisfaction(M)
+        mean_interratial_1 = mean_interratial_pears(M)
+        continua = True
+        bloked = False
+        blocks[0] = False
+        blocks[1] = False
+        counter = 0
+        while(continua):
+            M,dissatisfaction_n = evolve(M)
+            counter += 1
+            if (dissatisfaction_n == 0 or bloked == True):
+                continua = False
+        similarity = get_mean_similarity_ratio(M)
+        dissatisfacton = get_mean_dissatisfaction(M)
+        mean_interratial = mean_interratial_pears(M)
+        f = open("schelling_values_100.csv", "a")
+        f.write("\n")
+        f.write("{};{};{};{};{};{};{};{}".format(empty,similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter))
+        f.close
 
+    f = open("schelling_values_100.csv", "a")
+    f.write("\n")
+    f.write("\n")
+    f.close
