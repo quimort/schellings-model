@@ -66,7 +66,7 @@ class Schelling:
         np.random.shuffle(filling)
         M[M == -1] = filling
         self.city = M
-        print((M == -1).sum())
+        
     
  
 
