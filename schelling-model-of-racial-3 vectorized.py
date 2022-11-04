@@ -3,10 +3,9 @@ import numpy as np
 from scipy.signal import convolve2d as convolve
 import time
 from multiprocessing import Pool
-from functools import partial
-from itertools import repeat
+from os import getpid
 # Gloval variables of the simulation
-N = 60
+N = 45
 sim_t = 0.5
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
@@ -221,7 +220,8 @@ def mean_interratial_pears(M,boundary='wrap'):
     return (interratial_pears/(np.size(M)*8))
 
 def start(arg):
-    empty = 0.2
+    print("I'm process", getpid())
+    empty = 0.1
     M = rand_init(N,empty,A_to_B)
     similarity_1 = get_mean_similarity_ratio(M)
     dissatisfacton_1 = get_mean_dissatisfaction(M)
@@ -243,11 +243,16 @@ def start(arg):
     f.write("{};{};{};{};{};{};{};{}".format(empty,similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter))
     f.close
     return arg
+def double(i):
+    print("I'm process", getpid())
+    return i * 2
 if __name__ == '__main__':
+    start_time = time.time()
     emptines = 0.2
     f = open("schelling_values_100.csv", "w")
     f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
     f.close
-    items = [(i) for i in range(2)]
-    with Pool() as pool:
-        pool.map(start,items)
+    with Pool(processes=8) as pool:
+        for i in pool.imap(double,range(100)):
+            print(i)
+    print("--- %s seconds ---" % (time.time() - start_time))
