@@ -3,9 +3,9 @@ import numpy as np
 from scipy.signal import convolve2d as convolve
 import time
 # Gloval variables of the simulation
-N = 60
+N = 50
 sim_t = 0.5
-empty = 0.001
+empty = 0.1
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
 epsilon = 0.00001
@@ -251,3 +251,4 @@ f = open("schelling_values_100.csv", "a")
 f.write("\n")
 f.write("\n")
 f.close
+print("--- %s seconds ---" % (time.time() - start_time))
