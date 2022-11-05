@@ -3,7 +3,7 @@ import numpy as np
 from scipy.signal import convolve2d as convolve
 import time
 # Gloval variables of the simulation
-N = 60
+N = 50
 sim_t = 0.5
 empty = 0.7
 A_to_B = 1
@@ -30,43 +30,66 @@ def rand_init(N,empty,a_to_b):
     np.random.shuffle(M)
     return  M.reshape(int(N),int(N))
 
-def check_happines_neighborhod(M,new_positions,type,old_position,boundary='wrap'):
+def calculete_vacant_neightbours(vacant):
+    return Kernel2 + vacant
+
+def change_type(positions,type):
+    positions2 = positions.reshape(5,5)
+    positions2[2][2] = type
+    return positions2.reshape(positions.shape[0])
+
+def calc_neights(positions,type,boundary='wrap'):
     Kws = dict(mode='same',boundary=boundary)
-    dissatisfaied_vacant = np.zeros(np.size(new_positions,axis=0),dtype=bool)
-    a_neights = convolve(M == 0,Kernel,**Kws)
-    b_neights = convolve(M == 1,Kernel,**Kws)
-    neights = convolve(M != -1,Kernel,**Kws)
-    contador = 0
+    positions = positions.reshape(5,5)
+    positions2 = (convolve(positions == type,Kernel,**Kws))[1:4,1:4]
+    return positions2
+
+def calc_all_neights(positions,boundary='wrap'):
+    Kws = dict(mode='same',boundary=boundary)
+    positions = positions.reshape(5,5)
+    positions2 = (convolve(positions != -1,Kernel,**Kws))[1:4,1:4]
+    return positions2
+def change_pos_type(positions):
+    positions = positions.reshape(5,5)[1:4,1:4]
+    return positions
+def calc_type_dissatisfyed(positions):
+    value = False
+    if(True in positions):
+        value = True
+    return value
+
+
+def check_happines_neighborhod(M,new_positions,type,old_position,a_neights,b_neights,neights,boundary='wrap'):
+    Kws = dict(mode='same',boundary=boundary)
+    vacant = np.apply_along_axis(calculete_vacant_neightbours,-1,new_positions)
+    vacant = np.where(vacant == np.size(M,axis=0),0,vacant)
+    vacant = np.where(vacant > np.size(M,axis=0),1,vacant)
+    vacant2 = vacant.reshape(-1, vacant.shape[-1])
+    Y = np.transpose(vacant2)[0]
+    X = np.transpose(vacant2)[1]
+    positon_type = M[Y,X]
+    positon_type = positon_type.reshape(vacant.shape[0],vacant.shape[1])
+    positon_type = np.apply_along_axis(change_type,-1,positon_type,type)
+    position_a_neights = np.apply_along_axis(calc_neights,-1,positon_type,0)
+    position_b_neights = np.apply_along_axis(calc_neights,-1,positon_type,1)
+    position_all_neights = np.apply_along_axis(calc_all_neights,-1,positon_type)
+    positon_type = np.apply_along_axis(change_pos_type,-1,positon_type)
+    position_a_neights = position_a_neights +epsilon
+    position_b_neights = position_b_neights +epsilon
+    position_all_neights = position_all_neights +epsilon
+    old_a_neights = (a_neights[Y,X].reshape(vacant.shape[0],5,5))[:,1:4,1:4]
+    old_b_neights = (b_neights[Y,X].reshape(vacant.shape[0],5,5))[:,1:4,1:4]
+    old_neights = (neights[Y,X].reshape(vacant.shape[0],5,5))[:,1:4,1:4]
+    if_type_a_dissatisfied = (position_a_neights/position_all_neights < sim_t)&(positon_type == 0)\
+        &(old_a_neights/old_neights >= sim_t)
+    if_type_a_dissatisfied = if_type_a_dissatisfied.reshape(vacant.shape[0],9)
+    a_dissatysfied = np.apply_along_axis(calc_type_dissatisfyed,-1,if_type_a_dissatisfied)
+    if_type_b_dissatisfied = (position_b_neights/position_all_neights < sim_t)&(positon_type == 1)\
+        &(old_b_neights/old_neights >= sim_t)
+    if_type_b_dissatisfied = if_type_b_dissatisfied.reshape(vacant.shape[0],9)
+    b_dissatysfied = np.apply_along_axis(calc_type_dissatisfyed,-1,if_type_b_dissatisfied)
+    dissatisfaied_vacant = a_dissatysfied + b_dissatysfied
     
-    for vacant in new_positions:
-        possible_neights = Kernel2 + vacant
-        possible_neights = np.where(possible_neights >= np.size(M,axis=0),0,possible_neights)
-        Y = np.transpose(possible_neights)[0]
-        X = np.transpose(possible_neights)[1]
-        positon_type = M[Y,X]
-        positon_type = positon_type.reshape(5,5)
-        positon_type[2][2]=type
-        position_a_neights = (convolve(positon_type == 0,Kernel,**Kws))[1:4,1:4]
-        position_b_neights = (convolve(positon_type == 1,Kernel,**Kws))[1:4,1:4]
-        position_all_neights = (convolve(positon_type != -1,Kernel,**Kws))[1:4,1:4]
-        positon_type = positon_type[1:4,1:4]
-        position_a_neights = position_a_neights +epsilon
-        position_b_neights = position_b_neights +epsilon
-        position_all_neights = position_all_neights +epsilon
-        old_a_neights = (a_neights[Y,X].reshape(5,5))[1:4,1:4]
-        old_b_neights = (b_neights[Y,X].reshape(5,5))[1:4,1:4]
-        old_neights = (neights[Y,X].reshape(5,5))[1:4,1:4]
-        old_a_neights = old_a_neights +epsilon
-        old_b_neights = old_b_neights +epsilon
-        old_neights = old_neights +epsilon
-        if_type_a_dissatisfied = (position_a_neights/position_all_neights < sim_t)&(positon_type == 0)\
-            &(old_a_neights/old_neights >= sim_t)
-        if_type_b_dissatisfied = (position_b_neights/position_all_neights < sim_t)&(positon_type == 1)\
-            &(old_b_neights/old_neights >= sim_t)
-        dissatisfactory = (if_type_a_dissatisfied == True)|(if_type_b_dissatisfied == True)
-        if(True in dissatisfactory):
-            dissatisfaied_vacant[contador] = True 
-        contador += 1
     return dissatisfaied_vacant
     
 
