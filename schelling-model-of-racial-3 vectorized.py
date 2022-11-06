@@ -129,7 +129,7 @@ def evolve(M,boundary='wrap'):
     Y = np.transpose(index_vacants)[0]
     X = np.transpose(index_vacants)[1]
     if (agent_tipe == 0 ):
-        dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
+        dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
         a_neights_vacants = a_neights[Y,X]
         neights_vacants = neights[Y,X]
         a_neights_vacants = a_neights_vacants + epsilon
@@ -144,7 +144,7 @@ def evolve(M,boundary='wrap'):
         if( True not in satisfaying_vacants_a):
             blocks[0] = True
     else:
-        dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
+        dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
         b_neights_vacants = b_neights[Y,X]
         neights_vacants = neights[Y,X]
         b_neights_vacants = b_neights_vacants + epsilon
@@ -167,7 +167,7 @@ def evolve(M,boundary='wrap'):
             neights_vacants = neights[Y,X]
             b_neights_vacants = b_neights_vacants + epsilon
             neights_vacants = neights_vacants +epsilon
-            dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
+            dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
             satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
             satisfaying_vacants_b = (satisfaying_vacants_b == True)&(dissatisfaied_vacant == False)
             if(True in satisfaying_vacants_b):
@@ -186,7 +186,7 @@ def evolve(M,boundary='wrap'):
             neights_vacants = neights[Y,X]
             a_neights_vacants = a_neights_vacants + epsilon
             neights_vacants = neights_vacants +epsilon
-            dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index)
+            dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
             satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
             satisfaying_vacants_a = (satisfaying_vacants_a == True)&(dissatisfaied_vacant == False)
             if(True in satisfaying_vacants_a):
@@ -245,11 +245,7 @@ def mean_interratial_pears(M,boundary='wrap'):
     interratial_pears = b_neights_pears.sum() + a_neight_pears.sum()
     return (interratial_pears/(np.size(M)*8))
 start_time = time.time()
-emptines = np.linspace(0.001,0.9,180)
-f = open("schelling_values_100.csv", "w")
-f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial\
-    ;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
-f.close
+emptines = np.linspace(0.021,0.9,180)
 for i in emptines:
     empty = i
     for ii in range(100):
@@ -273,9 +269,9 @@ for i in emptines:
         f = open("schelling_values_100.csv", "a")
         f.write("\n")
         f.write("{};{};{};{};{};{};{};{}".format(empty,similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter))
-        f.close
-
+        print(ii)
     f = open("schelling_values_100.csv", "a")
     f.write("\n")
     f.write("\n")
     f.close
+    print(empty)
