@@ -1,4 +1,5 @@
 vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial    ;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations
+
 0.001;0.49546491600558873;0.3816;0.7471;0.4961387244229651;0.3768;0.7473;4
 0.001;0.5071220442096889;0.354;0.7529;0.5094791836102027;0.3488;0.7535;10
 0.001;0.4959292010476816;0.3796;0.7476;0.4965292000833967;0.3784;0.7472;4
