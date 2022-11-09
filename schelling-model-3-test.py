@@ -198,7 +198,7 @@ def evolve(M,boundary='wrap'):
                 blocks[0] = True
     if(blocks[0] == True and blocks[1] == True):
        bloked= True
-    return M,dissatisfaction_n
+    return M,dissatisfaction_n,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
 
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
