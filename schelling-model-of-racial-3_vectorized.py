@@ -249,16 +249,15 @@ def start(arg):
     similarity_1 = get_mean_similarity_ratio(M)
     dissatisfacton_1 = get_mean_dissatisfaction(M)
     mean_interratial_1 = mean_interratial_pears(M)
-    continua = True
     bloked = False
     blocks = np.array([False,False])
     counter = 0
     
-    while(continua):
+    for i in range(30000):
         M,dissatisfaction_n = evolve(M,bloked,blocks)
-        counter += 1
-        if (dissatisfaction_n == 0 or bloked == True or counter == 50000) :
-            continua = False
+        counter = i
+        if (dissatisfaction_n == 0 or bloked == True ) :
+            break
     
     similarity = get_mean_similarity_ratio(M)
     dissatisfacton = get_mean_dissatisfaction(M)
