@@ -245,7 +245,7 @@ def mean_interratial_pears(M,boundary='wrap'):
     interratial_pears = b_neights_pears.sum() + a_neight_pears.sum()
     return (interratial_pears/(np.size(M)*8))
 start_time = time.time()
-emptines = np.linspace(0.021,0.9,180)
+emptines = np.linspace(0.722,0.9,180)
 for i in emptines:
     empty = i
     for ii in range(100):
@@ -261,7 +261,7 @@ for i in emptines:
         while(continua):
             M,dissatisfaction_n = evolve(M)
             counter += 1
-            if (dissatisfaction_n == 0 or bloked == True):
+            if (dissatisfaction_n == 0 or bloked == True or counter == 10000):
                 continua = False
         similarity = get_mean_similarity_ratio(M)
         dissatisfacton = get_mean_dissatisfaction(M)
@@ -269,7 +269,7 @@ for i in emptines:
         f = open("schelling_values_100.csv", "a")
         f.write("\n")
         f.write("{};{};{};{};{};{};{};{}".format(empty,similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter))
-        print(ii)
+        print("promitj {}".format(ii))
     f = open("schelling_values_100.csv", "a")
     f.write("\n")
     f.write("\n")
