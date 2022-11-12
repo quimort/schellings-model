@@ -2,15 +2,16 @@ from itertools import count
 import numpy as np
 from scipy.signal import convolve2d as convolve
 import time
+from multiprocessing import Pool
+import os
 # Gloval variables of the simulation
-N = 60
+N = 10
 sim_t = 0.5
 empty = 0.1
 A_to_B = 1
+epsilon=0.00001
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
-epsilon = 0.00001
-bloked = False
-blocks= np.array([False,False])
+
 def rand_init(N,empty,a_to_b):
     """ Random grid initialitzation
     A = 0
@@ -27,7 +28,14 @@ def rand_init(N,empty,a_to_b):
     np.random.shuffle(M)
     return  M.reshape(int(N),int(N))
 
-def evolve(M,boundary='wrap'):
+
+
+
+
+
+    
+
+def evolve(M,bloked,blocks,boundary='wrap'):
     """
     Args:
         M(numpy.array): the matrix to be evolved
@@ -38,22 +46,16 @@ def evolve(M,boundary='wrap'):
     then the individual moves to an empty house. 
     """
     Kws = dict(mode='same',boundary=boundary)
-    global blocks 
-    global bloked 
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
-    a_neights = a_neights + epsilon
-    b_neights = b_neights + epsilon
-    neights = neights + epsilon
-    a_dissatisfaction = (a_neights/neights < sim_t)&(M == 0)
-    b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
+    a_dissatisfaction = (a_neights < sim_t*neights)&(M == 0)
+    b_dissatisfaction = (b_neights < sim_t*neights)&(M == 1)
     n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
     dissatisfaction_n = (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
     cordenates_a = np.argwhere(a_dissatisfaction)
     cordenates_b = np.argwhere(b_dissatisfaction)
     cordenates = np.concatenate((cordenates_a,cordenates_b),axis = 0)
-    print(np.size(cordenates,axis=0))
     if (np.size(cordenates,axis=0) == 0):
         bloked = True
         return M,dissatisfaction_n
@@ -66,9 +68,7 @@ def evolve(M,boundary='wrap'):
     if (agent_tipe == 0 ):
         a_neights_vacants = a_neights[Y,X]
         neights_vacants = neights[Y,X]
-        a_neights_vacants = a_neights_vacants + epsilon
-        neights_vacants = neights_vacants +epsilon
-        satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
+        satisfaying_vacants_a = (a_neights_vacants >= sim_t*neights_vacants)
         if(True in satisfaying_vacants_a):
             array_of_good_vacants = np.where(satisfaying_vacants_a == True)
             move_to = index_vacants[array_of_good_vacants[0][0]]
@@ -79,9 +79,7 @@ def evolve(M,boundary='wrap'):
     else:
         b_neights_vacants = b_neights[Y,X]
         neights_vacants = neights[Y,X]
-        b_neights_vacants = b_neights_vacants + epsilon
-        neights_vacants = neights_vacants +epsilon
-        satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
+        satisfaying_vacants_b = (b_neights_vacants >= sim_t*neights_vacants)
         if(True in satisfaying_vacants_b):
             array_of_good_vacants = np.where(satisfaying_vacants_b == True)
             move_to = index_vacants[array_of_good_vacants[0][0]]
@@ -96,9 +94,7 @@ def evolve(M,boundary='wrap'):
             cordenate_test = index_test[0]
             b_neights_vacants = b_neights[Y,X]
             neights_vacants = neights[Y,X]
-            b_neights_vacants = b_neights_vacants + epsilon
-            neights_vacants = neights_vacants +epsilon
-            satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
+            satisfaying_vacants_b = (b_neights_vacants >= sim_t*neights_vacants)
             if(True in satisfaying_vacants_b):
                 array_of_good_vacants = np.where(satisfaying_vacants_b == True)
                 move_to = index_vacants[array_of_good_vacants[0][0]]
@@ -113,9 +109,7 @@ def evolve(M,boundary='wrap'):
             cordenate_test = index_test[0]
             a_neights_vacants = a_neights[Y,X]
             neights_vacants = neights[Y,X]
-            a_neights_vacants = a_neights_vacants + epsilon
-            neights_vacants = neights_vacants +epsilon
-            satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
+            satisfaying_vacants_a = (a_neights_vacants >= sim_t*neights_vacants)
             if(True in satisfaying_vacants_a):
                 array_of_good_vacants = np.where(satisfaying_vacants_a == True)
                 move_to = index_vacants[array_of_good_vacants[0][0]]
@@ -126,6 +120,7 @@ def evolve(M,boundary='wrap'):
     if(blocks[0] == True and blocks[1] == True):
        bloked= True
     return M,dissatisfaction_n
+
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
     Kws = dict(mode='same',boundary=boundary)
@@ -170,23 +165,47 @@ def mean_interratial_pears(M,boundary='wrap'):
     a_neight_pears = a_neights
     interratial_pears = b_neights_pears.sum() + a_neight_pears.sum()
     return (interratial_pears/(np.size(M)*8))
-start_time = time.time()
-M = rand_init(N,empty,A_to_B)
-similarity = get_mean_similarity_ratio(M)
-dissatisfacton = get_mean_dissatisfaction(M)
-print("similarity initial = {} /dissatisfaction initial = {}".format(similarity,dissatisfacton))
-continua = True
-counter = 0
-while(continua):
-    M,dissatisfaction_n = evolve(M)
-    counter += 1
-    if (dissatisfaction_n == 0 or bloked == True):
-        continua = False
-similarity = get_mean_similarity_ratio(M)
-dissatisfacton = get_mean_dissatisfaction(M)
-mean_interratial = mean_interratial_pears(M)
-print("similarity final = {} /dissatisfaction final = {} / mean inerratial pears = {}"\
-    .format(similarity,dissatisfacton,mean_interratial))
-print("number of iterations = {}".format(counter))
-print("--- %s seconds ---" % (time.time() - start_time))
+
+def start(arg):
+    M = rand_init(N,empty,A_to_B)
+    similarity_1 = get_mean_similarity_ratio(M)
+    dissatisfacton_1 = get_mean_dissatisfaction(M)
+    mean_interratial_1 = mean_interratial_pears(M)
+    bloked = False
+    blocks = np.array([False,False])
+    counter = 0
+    
+    for i in range(30000):
+        M,dissatisfaction_n = evolve(M,bloked,blocks)
+        counter = i
+        if (dissatisfaction_n == 0 or bloked == True ) :
+            break
+    
+    similarity = get_mean_similarity_ratio(M)
+    dissatisfacton = get_mean_dissatisfaction(M)
+    mean_interratial = mean_interratial_pears(M)
+    return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
+if __name__ == '__main__':
+    start_time = time.time()
+    emptines = np.linspace(0.001,0.9,3)
+    f = open("schelling_values_100_model_2.csv", "w")
+    f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
+    f.close
+    for emptys in emptines:
+        empty = emptys
+        with Pool(os.cpu_count()) as p:
+            sim1= p.imap(start,range(10))
+            for i in zip(sim1):
+                f = open("schelling_values_100_model_2.csv", "a")
+                f.write("\n")
+                f.write("{};{};{};{};{};{};{};{}".format(empty,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
+                f.close
+        f = open("schelling_values_100_model_2.csv", "a")
+        f.write("\n")
+        f.write("\n")
+        f.close   
+        print(empty)
+                
+        
+    print("--- %s seconds ---" % (time.time() - start_time))
 

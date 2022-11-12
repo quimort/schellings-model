@@ -266,7 +266,7 @@ def start(arg):
 if __name__ == '__main__':
     start_time = time.time()
     emptines = np.linspace(0.001,0.9,3)
-    f = open("schelling_values_100.csv", "w")
+    f = open("schelling_values_100_model_2.csv", "w")
     f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
     f.close
     for emptys in emptines:
@@ -274,11 +274,11 @@ if __name__ == '__main__':
         with Pool(os.cpu_count()) as p:
             sim1= p.imap(start,range(40))
             for i in zip(sim1):
-                f = open("schelling_values_100.csv", "a")
+                f = open("schelling_values_100_model_2.csv", "a")
                 f.write("\n")
                 f.write("{};{};{};{};{};{};{};{}".format(empty,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
                 f.close
-        f = open("schelling_values_100.csv", "a")
+        f = open("schelling_values_100_model_2.csv", "a")
         f.write("\n")
         f.write("\n")
         f.close   
