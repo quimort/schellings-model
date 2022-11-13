@@ -5,7 +5,7 @@ import time
 from multiprocessing import Pool
 import os
 # Gloval variables of the simulation
-N = 10
+N = 50
 sim_t = 0.5
 empty = 0.1
 A_to_B = 1
@@ -177,7 +177,7 @@ def start(arg):
     
     for i in range(30000):
         M,dissatisfaction_n = evolve(M,bloked,blocks)
-        counter = i
+        counter = i+1
         if (dissatisfaction_n == 0 or bloked == True ) :
             break
     
@@ -187,14 +187,14 @@ def start(arg):
     return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
 if __name__ == '__main__':
     start_time = time.time()
-    emptines = np.linspace(0.001,0.9,3)
+    emptines = np.linspace(0.001,0.9,180)
     f = open("schelling_values_100_model_2.csv", "w")
     f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
     f.close
     for emptys in emptines:
         empty = emptys
         with Pool(os.cpu_count()) as p:
-            sim1= p.imap(start,range(10))
+            sim1= p.imap(start,range(100))
             for i in zip(sim1):
                 f = open("schelling_values_100_model_2.csv", "a")
                 f.write("\n")
