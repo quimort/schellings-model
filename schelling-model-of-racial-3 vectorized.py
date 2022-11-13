@@ -5,7 +5,7 @@ import time
 from multiprocessing import Pool
 import os
 # Gloval variables of the simulation
-N = 10
+N = 50
 sim_t = 0.5
 empty = 0.1
 A_to_B = 1
