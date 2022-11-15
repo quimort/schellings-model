@@ -67,25 +67,24 @@ def check_happines_neighborhod(M,new_positions,type,old_position,a_neights,b_nei
     vacant2 = vacant.reshape(-1, vacant.shape[-1])
     Y = np.transpose(vacant2)[0]
     X = np.transpose(vacant2)[1]
+    M[old_position[0]][old_position[1]] = -1
     positon_type = M[Y,X]
+    M[old_position[0]][old_position[1]] = type
     positon_type = positon_type.reshape(vacant.shape[0],vacant.shape[1])
     positon_type = np.apply_along_axis(change_type,-1,positon_type,type)
     position_a_neights = np.apply_along_axis(calc_neights,-1,positon_type,0)
     position_b_neights = np.apply_along_axis(calc_neights,-1,positon_type,1)
     position_all_neights = np.apply_along_axis(calc_all_neights,-1,positon_type)
     positon_type = np.apply_along_axis(change_pos_type,-1,positon_type)
-    position_a_neights = position_a_neights +epsilon
-    position_b_neights = position_b_neights +epsilon
-    position_all_neights = position_all_neights +epsilon
     old_a_neights = (a_neights[Y,X].reshape(vacant.shape[0],5,5))[:,1:4,1:4]
     old_b_neights = (b_neights[Y,X].reshape(vacant.shape[0],5,5))[:,1:4,1:4]
     old_neights = (neights[Y,X].reshape(vacant.shape[0],5,5))[:,1:4,1:4]
-    if_type_a_dissatisfied = (position_a_neights/position_all_neights < sim_t)&(positon_type == 0)\
-        &(old_a_neights/old_neights >= sim_t)
+    if_type_a_dissatisfied = (position_a_neights < sim_t*position_all_neights)&(positon_type == 0)\
+        &(old_a_neights >= sim_t*old_neights)
     if_type_a_dissatisfied = if_type_a_dissatisfied.reshape(vacant.shape[0],9)
     a_dissatysfied = np.apply_along_axis(calc_type_dissatisfyed,-1,if_type_a_dissatisfied)
-    if_type_b_dissatisfied = (position_b_neights/position_all_neights < sim_t)&(positon_type == 1)\
-        &(old_b_neights/old_neights >= sim_t)
+    if_type_b_dissatisfied = (position_b_neights < sim_t*position_all_neights)&(positon_type == 1)\
+        &(old_b_neights >= sim_t*old_neights)
     if_type_b_dissatisfied = if_type_b_dissatisfied.reshape(vacant.shape[0],9)
     b_dissatysfied = np.apply_along_axis(calc_type_dissatisfyed,-1,if_type_b_dissatisfied)
     dissatisfaied_vacant = a_dissatysfied + b_dissatysfied
@@ -107,11 +106,8 @@ def evolve(M,bloked,blocks,boundary='wrap'):
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
-    a_neights = a_neights + epsilon
-    b_neights = b_neights + epsilon
-    neights = neights + epsilon
-    a_dissatisfaction = (a_neights/neights < sim_t)&(M == 0)
-    b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
+    a_dissatisfaction = (a_neights < sim_t*neights)&(M == 0)
+    b_dissatisfaction = (b_neights < sim_t*neights)&(M == 1)
     n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
     dissatisfaction_n = (n_a_dissatisfied+n_b_dissatisfied)/np.size(M)
     cordenates_a = np.argwhere(a_dissatisfaction)
@@ -130,9 +126,7 @@ def evolve(M,bloked,blocks,boundary='wrap'):
         dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
         a_neights_vacants = a_neights[Y,X]
         neights_vacants = neights[Y,X]
-        a_neights_vacants = a_neights_vacants + epsilon
-        neights_vacants = neights_vacants +epsilon
-        satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
+        satisfaying_vacants_a = (a_neights_vacants >= sim_t*neights_vacants)
         satisfaying_vacants_a = (satisfaying_vacants_a == True)&(dissatisfaied_vacant == False)
         if(True in satisfaying_vacants_a):
             array_of_good_vacants = np.where(satisfaying_vacants_a == True)
@@ -145,9 +139,7 @@ def evolve(M,bloked,blocks,boundary='wrap'):
         dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
         b_neights_vacants = b_neights[Y,X]
         neights_vacants = neights[Y,X]
-        b_neights_vacants = b_neights_vacants + epsilon
-        neights_vacants = neights_vacants +epsilon
-        satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
+        satisfaying_vacants_b = (b_neights_vacants >= sim_t*neights_vacants)
         satisfaying_vacants_b = (satisfaying_vacants_b == True)&(dissatisfaied_vacant == False)
         if(True in satisfaying_vacants_b):
             array_of_good_vacants = np.where(satisfaying_vacants_b == True)
@@ -163,10 +155,8 @@ def evolve(M,bloked,blocks,boundary='wrap'):
             cordenate_test = index_test[0]
             b_neights_vacants = b_neights[Y,X]
             neights_vacants = neights[Y,X]
-            b_neights_vacants = b_neights_vacants + epsilon
-            neights_vacants = neights_vacants +epsilon
             dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
-            satisfaying_vacants_b = (b_neights_vacants/neights_vacants >= sim_t)
+            satisfaying_vacants_b = (b_neights_vacants >= sim_t*neights_vacants)
             satisfaying_vacants_b = (satisfaying_vacants_b == True)&(dissatisfaied_vacant == False)
             if(True in satisfaying_vacants_b):
                 array_of_good_vacants = np.where(satisfaying_vacants_b == True)
@@ -182,10 +172,8 @@ def evolve(M,bloked,blocks,boundary='wrap'):
             cordenate_test = index_test[0]
             a_neights_vacants = a_neights[Y,X]
             neights_vacants = neights[Y,X]
-            a_neights_vacants = a_neights_vacants + epsilon
-            neights_vacants = neights_vacants +epsilon
             dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
-            satisfaying_vacants_a = (a_neights_vacants/neights_vacants >= sim_t)
+            satisfaying_vacants_a = (a_neights_vacants >= sim_t*neights_vacants)
             satisfaying_vacants_a = (satisfaying_vacants_a == True)&(dissatisfaied_vacant == False)
             if(True in satisfaying_vacants_a):
                 array_of_good_vacants = np.where(satisfaying_vacants_a == True)
