@@ -251,21 +251,26 @@ def start(arg):
     mean_interratial = mean_interratial_pears(M)
     return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
 if __name__ == '__main__':
+    file_name = "schelling_values_1000_model_3.csv"
     start_time = time.time()
-    emptines = np.linspace(0.026,0.096,14)
+    emptines = np.linspace(0.001,0.9,180)
+    f = open(file_name, "w")
+    f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
+    f.close
     for emptys in emptines:
         empty = emptys
         with Pool(os.cpu_count()) as p:
-            sim1= p.imap(start,range(100))
+            sim1= p.imap(start,range(1000))
             for i in zip(sim1):
-                f = open("schelling_values_100.csv", "a")
+                f = open(file_name, "a")
                 f.write("\n")
                 f.write("{};{};{};{};{};{};{};{}".format(empty,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
                 f.close
-        f = open("schelling_values_100.csv", "a")
+        f = open(file_name, "a")
         f.write("\n")
         f.write("\n")
         f.close   
-        print(empty)   
+        print(empty)
+                
         
     print("--- %s seconds ---" % (time.time() - start_time))
