@@ -265,17 +265,17 @@ if __name__ == '__main__':
     f.close
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(6))
-            for i in zip(sim1):
+            sim1= p.imap(start,range(3))
+            for i in sim1:
                 f = open(file_name, "a")
                 f.write("\n")
-                f.write("{};{};{};{};{};{};{};{}".format(empty,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
+                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0],i[1],i[2],i[3],i[4],i[5],i[6]))
                 f.close
         f = open(file_name, "a")
         f.write("\n")
         f.write("\n")
         f.close   
-        print(empty)
+        print(emptys)
               
         
     print("--- %s seconds ---" % (time.time() - start_time))
