@@ -18,7 +18,6 @@ def rand_init(N,empty,a_to_b):
     B = 1
     empty = -1
     """
-    print("empty={}".format(empty))
     vacant = N*N*empty
     population = N**2-vacant
     A = int(population*1/(1+1/a_to_b))
@@ -191,7 +190,7 @@ def inicialize_empty(emptines):
 
     empty = emptines
 if __name__ == '__main__':
-    file_name = "schelling_values_1000_model_2.csv"
+    file_name = "schelling_values_100_model_2.csv"
     start_time = time.time()
     emptines = np.linspace(0.001,0.9,180)
     f = open(file_name, "w")
@@ -199,7 +198,7 @@ if __name__ == '__main__':
     f.close
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(10))
+            sim1= p.imap(start,range(100))
             for i in zip(sim1):
                 f = open(file_name, "a")
                 f.write("\n")
