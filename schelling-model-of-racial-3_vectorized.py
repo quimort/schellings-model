@@ -21,7 +21,7 @@ def rand_init(N,empty,a_to_b):
     empty = -1
     """
     vacant = N*N*empty
-    population = N**2-vacant
+    population = N*N-vacant
     A = int(population*1/(1+1/a_to_b))
     B = int(population-A)
     M =np.zeros(int(N*N),dtype=np.int8)
@@ -61,15 +61,15 @@ def calc_type_dissatisfyed(positions):
 
 def check_happines_neighborhod(M,new_positions,type,old_position,a_neights,b_neights,neights,boundary='wrap'):
     Kws = dict(mode='same',boundary=boundary)
+    if(np.size(new_positions,axis=0)==0):
+        print(new_positions)
     vacant = np.apply_along_axis(calculete_vacant_neightbours,-1,new_positions)
     vacant = np.where(vacant == np.size(M,axis=0),0,vacant)
     vacant = np.where(vacant > np.size(M,axis=0),1,vacant)
     vacant2 = vacant.reshape(-1, vacant.shape[-1])
     Y = np.transpose(vacant2)[0]
     X = np.transpose(vacant2)[1]
-    M[old_position[0]][old_position[1]] = -1
     positon_type = M[Y,X]
-    M[old_position[0]][old_position[1]] = type
     positon_type = positon_type.reshape(vacant.shape[0],vacant.shape[1])
     positon_type = np.apply_along_axis(change_type,-1,positon_type,type)
     position_a_neights = np.apply_along_axis(calc_neights,-1,positon_type,0)
@@ -122,6 +122,8 @@ def evolve(M,bloked,blocks,boundary='wrap'):
     agent_tipe = M[random_index[0]][random_index[1]]
     Y = np.transpose(index_vacants)[0]
     X = np.transpose(index_vacants)[1]
+    if(np.size(index_vacants,axis=0)==0):
+        print((M==-1).sum())
     if (agent_tipe == 0 ):
         dissatisfaied_vacant = check_happines_neighborhod(M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
         a_neights_vacants = a_neights[Y,X]
@@ -232,7 +234,7 @@ def mean_interratial_pears(M,boundary='wrap'):
     return (interratial_pears/(np.size(M)*8))
 
 def start(arg):
-    
+    print("hello")
     M = rand_init(N,empty,A_to_B)
     similarity_1 = get_mean_similarity_ratio(M)
     dissatisfacton_1 = get_mean_dissatisfaction(M)
@@ -265,10 +267,10 @@ if __name__ == '__main__':
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
             sim1= p.imap(start,range(1000))
-            for i in sim1:
+            for i in zip(sim1):
                 f = open(file_name, "a")
                 f.write("\n")
-                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0],i[1],i[2],i[3],i[4],i[5],i[6]))
+                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
                 f.close
         f = open(file_name, "a")
         f.write("\n")
