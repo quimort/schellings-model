@@ -7,7 +7,7 @@ import os
 # Gloval variables of the simulation
 N = 50
 sim_t = 0.5
-empty = 0.1
+empty = 0.001
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
 epsilon = 0.00001
@@ -60,9 +60,6 @@ def calc_type_dissatisfyed(positions):
 
 
 def check_happines_neighborhod(M,new_positions,type,old_position,a_neights,b_neights,neights,boundary='wrap'):
-    Kws = dict(mode='same',boundary=boundary)
-    if(np.size(new_positions,axis=0)==0):
-        print(new_positions)
     vacant = np.apply_along_axis(calculete_vacant_neightbours,-1,new_positions)
     vacant = np.where(vacant == np.size(M,axis=0),0,vacant)
     vacant = np.where(vacant > np.size(M,axis=0),1,vacant)
@@ -186,7 +183,7 @@ def evolve(M,bloked,blocks,boundary='wrap'):
                 blocks[0] = True
     if(blocks[0] == True and blocks[1] == True):
        bloked= True
-    return M,dissatisfaction_n
+    return M,dissatisfaction_n,bloked,blocks
 
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
@@ -234,7 +231,6 @@ def mean_interratial_pears(M,boundary='wrap'):
     return (interratial_pears/(np.size(M)*8))
 
 def start(arg):
-    print("hello")
     M = rand_init(N,empty,A_to_B)
     similarity_1 = get_mean_similarity_ratio(M)
     dissatisfacton_1 = get_mean_dissatisfaction(M)
@@ -244,7 +240,7 @@ def start(arg):
     counter = 0
     
     for i in range(30000):
-        M,dissatisfaction_n = evolve(M,bloked,blocks)
+        M,dissatisfaction_n,bloked,blocks = evolve(M,bloked,blocks)
         counter = i+1
         if (dissatisfaction_n == 0 or bloked == True ) :
             break
@@ -266,11 +262,11 @@ if __name__ == '__main__':
     f.close
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(1000))
-            for i in zip(sim1):
+            sim1= p.imap(start,range(10))
+            for i in sim1:
                 f = open(file_name, "a")
                 f.write("\n")
-                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
+                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0],i[1],i[2],i[3],i[4],i[5],i[6]))
                 f.close
         f = open(file_name, "a")
         f.write("\n")

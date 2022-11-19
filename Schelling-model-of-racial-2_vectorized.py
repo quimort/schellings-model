@@ -27,15 +27,11 @@ def rand_init(N,empty,a_to_b):
     M[int(-vacant):] = -1
     np.random.shuffle(M)
     return  M.reshape(int(N),int(N))
+def inicialize_empty(emptines):
+    global empty
 
-
-
-
-
-
-    
-
-def evolve(M,bloked,blocks,boundary='wrap'):
+    empty = emptines
+def evolve(M,bloked,blocks_a,blocks_b,boundary='wrap'):
     """
     Args:
         M(numpy.array): the matrix to be evolved
@@ -45,6 +41,7 @@ def evolve(M,bloked,blocks,boundary='wrap'):
     is lower than sim_t,
     then the individual moves to an empty house. 
     """
+    
     Kws = dict(mode='same',boundary=boundary)
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
@@ -75,7 +72,7 @@ def evolve(M,bloked,blocks,boundary='wrap'):
             M[random_index[0]][random_index[1]] = -1
             M[move_to[0]][move_to[1]] = 0
         if( True not in satisfaying_vacants_a):
-            blocks[0] = True
+            blocks_a = True
     else:
         b_neights_vacants = b_neights[Y,X]
         neights_vacants = neights[Y,X]
@@ -86,8 +83,8 @@ def evolve(M,bloked,blocks,boundary='wrap'):
             M[random_index[0]][random_index[1]] = -1
             M[move_to[0]][move_to[1]] = 1
         if( True not in satisfaying_vacants_b):
-            blocks[1] = True
-    if(blocks[0] == True):
+            blocks_b = True
+    if(blocks_a == True):
         "a agents are blocked"
         index_test = cordenates_b
         if(np.size(index_test,axis=0) != 0):
@@ -101,8 +98,8 @@ def evolve(M,bloked,blocks,boundary='wrap'):
                 M[cordenate_test[0]][cordenate_test[1]] = -1
                 M[move_to[0]][move_to[1]] = 1
             if( True not in satisfaying_vacants_b):
-                blocks[1] = True
-    if(blocks[1] == True):
+                blocks_b = True
+    if(blocks_b == True):
         "b agents are blocked"
         index_test = cordenates_a
         if(np.size(index_test,axis=0) != 0):
@@ -116,10 +113,11 @@ def evolve(M,bloked,blocks,boundary='wrap'):
                 M[cordenate_test[0]][cordenate_test[1]] = -1
                 M[move_to[0]][move_to[1]] = 1
             if( True not in satisfaying_vacants_a):
-                blocks[0] = True
-    if(blocks[0] == True and blocks[1] == True):
+                blocks_a = True
+    if(blocks_a == True and blocks_b == True):
        bloked= True
-    return M,dissatisfaction_n
+    mylist = [M,dissatisfaction_n,bloked,blocks_a,blocks_b]
+    return mylist
 
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
@@ -172,11 +170,13 @@ def start(arg):
     dissatisfacton_1 = get_mean_dissatisfaction(M)
     mean_interratial_1 = mean_interratial_pears(M)
     bloked = False
-    blocks = np.array([False,False])
+    blocks_a = False
+    blocks_b = False
     counter = 0
-    
+    dissatisfaction_n = 0
     for i in range(30000):
-        M,dissatisfaction_n = evolve(M,bloked,blocks)
+        M,dissatisfaction_n,*c = evolve(M,bloked,blocks_a,blocks_b)
+        bloked,blocks_a,blocks_b=c
         counter = i+1
         if (dissatisfaction_n == 0 or bloked == True ) :
             break
@@ -185,12 +185,9 @@ def start(arg):
     dissatisfacton = get_mean_dissatisfaction(M)
     mean_interratial = mean_interratial_pears(M)
     return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
-def inicialize_empty(emptines):
-    global empty
 
-    empty = emptines
 if __name__ == '__main__':
-    file_name = "schelling_values_100_model_2.csv"
+    file_name = "schelling_values_100_model_2_test.csv"
     start_time = time.time()
     emptines = np.linspace(0.001,0.9,180)
     f = open(file_name, "w")
@@ -198,7 +195,7 @@ if __name__ == '__main__':
     f.close
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(100))
+            sim1= p.imap(start,range(10))
             for i in zip(sim1):
                 f = open(file_name, "a")
                 f.write("\n")
