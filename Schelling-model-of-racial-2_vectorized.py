@@ -55,7 +55,7 @@ def evolve(M,bloked,blocks_a,blocks_b,boundary='wrap'):
     cordenates = np.concatenate((cordenates_a,cordenates_b),axis = 0)
     if (np.size(cordenates,axis=0) == 0):
         bloked = True
-        return M,dissatisfaction_n
+        return M,dissatisfaction_n,bloked,blocks_a,blocks_b
     random_number = np.random.randint(np.size(cordenates,axis=0),size=1)
     random_index = cordenates[random_number][0]
     index_vacants = np.argwhere(M == -1)
@@ -116,8 +116,8 @@ def evolve(M,bloked,blocks_a,blocks_b,boundary='wrap'):
                 blocks_a = True
     if(blocks_a == True and blocks_b == True):
        bloked= True
-    mylist = [M,dissatisfaction_n,bloked,blocks_a,blocks_b]
-    return mylist
+    
+    return M,dissatisfaction_n,bloked,blocks_a,blocks_b
 
 def get_mean_similarity_ratio(M,boundary='wrap'):
 
@@ -187,7 +187,7 @@ def start(arg):
     return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
 
 if __name__ == '__main__':
-    file_name = "schelling_values_100_model_2_test.csv"
+    file_name = "schelling_values_100_model_2.csv"
     start_time = time.time()
     emptines = np.linspace(0.001,0.9,180)
     f = open(file_name, "w")

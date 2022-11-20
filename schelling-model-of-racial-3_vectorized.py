@@ -112,7 +112,7 @@ def evolve(M,bloked,blocks,boundary='wrap'):
     cordenates = np.concatenate((cordenates_a,cordenates_b),axis = 0)
     if (np.size(cordenates,axis=0) == 0):
         bloked = True
-        return M,dissatisfaction_n
+        return M,dissatisfaction_n,bloked,blocks
     random_number = np.random.randint(np.size(cordenates,axis=0),size=1)
     random_index = cordenates[random_number][0]
     index_vacants = np.argwhere(M == -1)
