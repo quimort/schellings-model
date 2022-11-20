@@ -195,7 +195,7 @@ if __name__ == '__main__':
     f.close
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(10))
+            sim1= p.imap(start,range(100))
             for i in zip(sim1):
                 f = open(file_name, "a")
                 f.write("\n")
