@@ -125,13 +125,10 @@ def get_mean_similarity_ratio(M,boundary='wrap'):
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
-    a_neights = a_neights + epsilon
-    b_neights = b_neights + epsilon
-    neights = neights + epsilon
     n_similar_a = np.where(np.logical_and(np.logical_and(M !=-1,M == 0),neights != 0),\
-        a_neights/neights,0)
+        a_neights/8,0)
     n_similar_b = np.where(np.logical_and(np.logical_and(M !=-1,M == 1),neights != 0),\
-         b_neights/neights,0)
+         b_neights/8,0)
     n_similar = np.sum((n_similar_a+n_similar_b))
     return n_similar/np.size(M)
 
@@ -160,9 +157,9 @@ def mean_interratial_pears(M,boundary='wrap'):
     b_positions = np.argwhere(M == 0)
     Y = np.transpose(b_positions)[0]
     X = np.transpose(b_positions)[1]
-    a_neight_pears = a_neights
+    a_neight_pears = a_neights[Y,X]
     interratial_pears = b_neights_pears.sum() + a_neight_pears.sum()
-    return (interratial_pears/(np.size(M)*8))
+    return (interratial_pears/(np.size(M)))
 
 def start(arg):
     M = rand_init(N,empty,A_to_B)
@@ -187,7 +184,7 @@ def start(arg):
     return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
 
 if __name__ == '__main__':
-    file_name = "schelling_values_1000_model_2.csv"
+    file_name = "schelling_values_1000_model_2_test.csv"
     start_time = time.time()
     emptines = np.linspace(0.001,0.9,180)
     f = open(file_name, "w")
@@ -195,7 +192,7 @@ if __name__ == '__main__':
     f.close
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(1000))
+            sim1= p.imap(start,range(100))
             for i in zip(sim1):
                 f = open(file_name, "a")
                 f.write("\n")

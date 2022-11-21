@@ -195,9 +195,9 @@ def get_mean_similarity_ratio(M,boundary='wrap'):
     b_neights = b_neights + epsilon
     neights = neights + epsilon
     n_similar_a = np.where(np.logical_and(np.logical_and(M !=-1,M == 0),neights != 0),\
-        a_neights/neights,0)
+        a_neights/8,0)
     n_similar_b = np.where(np.logical_and(np.logical_and(M !=-1,M == 1),neights != 0),\
-         b_neights/neights,0)
+         b_neights/8,0)
     n_similar = np.sum((n_similar_a+n_similar_b))
     return n_similar/np.size(M)
 
@@ -226,9 +226,9 @@ def mean_interratial_pears(M,boundary='wrap'):
     b_positions = np.argwhere(M == 0)
     Y = np.transpose(b_positions)[0]
     X = np.transpose(b_positions)[1]
-    a_neight_pears = a_neights
+    a_neight_pears = a_neights[Y,X]
     interratial_pears = b_neights_pears.sum() + a_neight_pears.sum()
-    return (interratial_pears/(np.size(M)*8))
+    return (interratial_pears/(np.size(M)))
 
 def start(arg):
     M = rand_init(N,empty,A_to_B)
