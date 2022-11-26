@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import convolve2d as convolve
 import time
 
-N = 100
+N = 50
 sim_t = 0.5
 empty = 0.01
 A_to_B = 1
@@ -44,12 +44,19 @@ def normal_method(M,a_neights):
     
     return M,a_neights
 
-M = rand_init(N,empty,A_to_B)
-start_time = time.time()
-M,a_neights1 = convolve_method(M)
-print("--- %s seconds --- optimization" % (time.time() - start_time))
-start_time = time.time()
-a_neights2=np.zeros((N,N),dtype=np.int8)
-M,a_neights2 = normal_method(M,a_neights2)
-print("--- %s seconds --- normal" % (time.time() - start_time))
-print(np.allclose(a_neights1,a_neights2))
+file_name = "schelling_optimization_empty_50.csv"
+empty = np.logspace(-2,0,100)
+f = open(file_name, "w")
+f.write("empty;optimized time(s);normal time(s)")  
+for i in empty:
+    M = rand_init(N,i,A_to_B)
+    start_time = time.time()
+    M,a_neights1 = convolve_method(M)
+    time1 = time.time() - start_time
+    start_time = time.time()
+    a_neights2=np.zeros((N,N),dtype=np.int8)
+    M,a_neights2 = normal_method(M,a_neights2)
+    time2 = time.time() - start_time
+    f.write("\n")
+    f.write("{};{};{}".format(i,time1,time2))
+f.close()
