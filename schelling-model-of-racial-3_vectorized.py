@@ -5,7 +5,7 @@ import time
 from multiprocessing import Pool
 import os
 # Gloval variables of the simulation
-N = 50
+N = 25
 sim_t = 0.5
 empty = 0.001
 A_to_B = 1
@@ -20,13 +20,13 @@ def rand_init(N,empty,a_to_b):
     B = 1
     empty = -1
     """
-    vacant = N*N*empty
+    vacant = int(round(N*N*empty))
     population = N*N-vacant
     A = int(population*1/(1+1/a_to_b))
     B = int(population-A)
     M =np.zeros(int(N*N),dtype=np.int8)
     M[:B] = 1
-    M[int(-vacant):] = -1
+    M[-vacant:] = -1
     np.random.shuffle(M)
     return  M.reshape(int(N),int(N))
 
@@ -229,8 +229,8 @@ def mean_interratial_pears(M,boundary='wrap'):
 
 def start(arg):
     M = rand_init(N,empty,A_to_B)
-    similarity_1 = get_mean_similarity_ratio(M)
-    dissatisfacton_1 = get_mean_dissatisfaction(M)
+    similarity_1 = get_mean_similarity_ratio(M,empty)
+    dissatisfacton_1 = get_mean_dissatisfaction(M,empty)
     mean_interratial_1 = mean_interratial_pears(M)
     bloked = False
     blocks = np.array([False,False])
@@ -242,8 +242,8 @@ def start(arg):
         if (dissatisfaction_n == 0 or bloked == True ) :
             break
     
-    similarity = get_mean_similarity_ratio(M)
-    dissatisfacton = get_mean_dissatisfaction(M)
+    similarity = get_mean_similarity_ratio(M,empty)
+    dissatisfacton = get_mean_dissatisfaction(M,empty)
     mean_interratial = mean_interratial_pears(M)
     return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
 def inicialize_empty(emptines):
@@ -251,14 +251,14 @@ def inicialize_empty(emptines):
 
     empty = emptines
 if __name__ == '__main__':
-    file_name = "schelling_values_1000_model_2_test.csv"
+    file_name = "schelling_values_1000_model_3_25.csv"
     start_time = time.time()
-    emptines = np.linspace(0.001,0.9,180)
+    emptines = np.logspace(-3,0,180)
     f = open(file_name, "w")
     f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(100))
+            sim1= p.imap(start,range(1000))
             for i in zip(sim1):
                 f.write("\n")
                 f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
