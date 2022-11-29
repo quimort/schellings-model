@@ -5,7 +5,7 @@ import time
 from multiprocessing import Pool
 import os
 # Gloval variables of the simulation
-N = 25
+N = 30
 sim_t = 0.5
 empty = 0.001
 A_to_B = 1
@@ -251,14 +251,14 @@ def inicialize_empty(emptines):
 
     empty = emptines
 if __name__ == '__main__':
-    file_name = "schelling_values_1000_model_3_25.csv"
+    file_name = "schelling_values_100_model_3_30.csv"
     start_time = time.time()
-    emptines = np.logspace(-3,0,180)
+    emptines = np.logspace(-2,0,100)
     f = open(file_name, "w")
     f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(1000))
+            sim1= p.imap(start,range(100))
             for i in zip(sim1):
                 f.write("\n")
                 f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
