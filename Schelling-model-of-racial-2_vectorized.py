@@ -5,7 +5,7 @@ import time
 from multiprocessing import Pool
 import os
 # Gloval variables of the simulation
-N = 50
+N = 30
 sim_t = 0.5
 empty = 0.1
 A_to_B = 1
@@ -163,8 +163,8 @@ def mean_interratial_pears(M,boundary='wrap'):
 
 def start(arg):
     M = rand_init(N,empty,A_to_B)
-    similarity_1 = get_mean_similarity_ratio(M)
-    dissatisfacton_1 = get_mean_dissatisfaction(M)
+    similarity_1 = get_mean_similarity_ratio(M,empty)
+    dissatisfacton_1 = get_mean_dissatisfaction(M,empty)
     mean_interratial_1 = mean_interratial_pears(M)
     bloked = False
     blocks_a = False
@@ -178,15 +178,15 @@ def start(arg):
         if (dissatisfaction_n == 0 or bloked == True ) :
             break
     
-    similarity = get_mean_similarity_ratio(M)
-    dissatisfacton = get_mean_dissatisfaction(M)
+    similarity = get_mean_similarity_ratio(M,empty)
+    dissatisfacton = get_mean_dissatisfaction(M,empty)
     mean_interratial = mean_interratial_pears(M)
     return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
 
 if __name__ == '__main__':
-    file_name = "schelling_values_1000_model_2_test.csv"
+    file_name = "schelling_values_100_model_2_30.csv"
     start_time = time.time()
-    emptines = np.linspace(0.001,0.9,180)
+    emptines = np.logspace(-2,0,100)
     f = open(file_name, "w")
     f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
     for emptys in emptines:
