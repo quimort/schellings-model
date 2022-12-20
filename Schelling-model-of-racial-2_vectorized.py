@@ -174,11 +174,12 @@ def start(arg):
     dissatisfacton_1 = get_mean_dissatisfaction(M,empty)
     mean_interratial_1_a,mean_interratial_1_b,mean_interratial_1 = mean_interratial_pears(M)
     bloked = False
-    blocks = np.array([False,False])
+    blocks_a = False
+    blocks_b = False
     counter = 0
     
     for i in range(30000):
-        M,dissatisfaction_n,bloked,blocks = evolve(M,bloked,blocks)
+        M,dissatisfaction_n,bloked,blocks_a,blocks_b = evolve(M,bloked,blocks_a,blocks_b)
         counter = i+1
         if (dissatisfaction_n == 0 or bloked == True ) :
             break
