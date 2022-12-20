@@ -129,9 +129,9 @@ def get_mean_similarity_ratio(M,empty,boundary='wrap'):
     b_neights = b_neights + epsilon
     neights = neights + epsilon
     n_similar_a = np.where(np.logical_and(np.logical_and(M !=-1,M == 0),neights != 0),\
-        a_neights/8,0)
+        a_neights/neights,0)
     n_similar_b = np.where(np.logical_and(np.logical_and(M !=-1,M == 1),neights != 0),\
-         b_neights/8,0)
+         b_neights/neights,0)
     n_similar = np.sum((n_similar_a+n_similar_b))
     return n_similar/((1-empty)*N*N)
 
@@ -153,52 +153,61 @@ def mean_interratial_pears(M,boundary='wrap'):
     Kws = dict(mode='same',boundary=boundary)
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
-    a_positions = np.argwhere(M == 1) 
+    a_positions = np.argwhere(M == 0) 
     Y = np.transpose(a_positions)[0]
     X = np.transpose(a_positions)[1]
     b_neights_pears = b_neights[Y,X]
     a_neight_pears = a_neights[Y,X]
-    interratial_pears = ((b_neights_pears.sum())/(b_neights_pears.sum()+a_neight_pears.sum()))
-    return (interratial_pears)
+    interratial_pears_a = ((b_neights_pears.sum())/(b_neights_pears.sum()+a_neight_pears.sum()))
+    b_positions = np.argwhere(M == 1) 
+    Y = np.transpose(b_positions)[0]
+    X = np.transpose(b_positions)[1]
+    a_neights_pears = a_neights[Y,X]
+    b_neights_pears = b_neights[Y,X]
+    interratial_pears_b = ((a_neights_pears.sum())/(b_neights_pears.sum()+a_neights_pears.sum()))
+    return (interratial_pears_a,interratial_pears_b,(interratial_pears_a+interratial_pears_b))
+
 
 def start(arg):
     M = rand_init(N,empty,A_to_B)
     similarity_1 = get_mean_similarity_ratio(M,empty)
     dissatisfacton_1 = get_mean_dissatisfaction(M,empty)
-    mean_interratial_1 = mean_interratial_pears(M)
+    mean_interratial_1_a,mean_interratial_1_b,mean_interratial_1 = mean_interratial_pears(M)
     bloked = False
-    blocks_a = False
-    blocks_b = False
+    blocks = np.array([False,False])
     counter = 0
-    dissatisfaction_n = 0
+    
     for i in range(30000):
-        M,dissatisfaction_n,*c = evolve(M,bloked,blocks_a,blocks_b)
-        bloked,blocks_a,blocks_b=c
+        M,dissatisfaction_n,bloked,blocks = evolve(M,bloked,blocks)
         counter = i+1
         if (dissatisfaction_n == 0 or bloked == True ) :
             break
     
     similarity = get_mean_similarity_ratio(M,empty)
     dissatisfacton = get_mean_dissatisfaction(M,empty)
-    mean_interratial = mean_interratial_pears(M)
-    return similarity_1,dissatisfacton_1,mean_interratial_1,similarity,dissatisfacton,mean_interratial,counter
+    mean_interratial_a,mean_interratial_b,mean_interratial = mean_interratial_pears(M)
+    return similarity_1,dissatisfacton_1,mean_interratial_1_a,mean_interratial_1_b,mean_interratial_1,similarity,dissatisfacton,mean_interratial_a,mean_interratial_b,mean_interratial,counter
+def inicialize_empty(emptines):
+    global empty
 
+    empty = emptines
 if __name__ == '__main__':
-    file_name = "schelling_values_100_model_2_30.csv"
+    file_name = "schelling_values_100_model_3_30.csv"
     start_time = time.time()
     emptines = np.logspace(-2,0,100)
     f = open(file_name, "w")
-    f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial;similarity ratio final;mean dissatisfaction final;mean interratial pears final;number of iterations")
+    f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial A;mean interratial pears inicial B;mean interratial pears inicial\
+        ;similarity ratio final;mean dissatisfaction final;mean interratial pears final A;mean interratial pears final B;mean interratial pears final;number of iterations")
     for emptys in emptines:
         with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
             sim1= p.imap(start,range(100))
             for i in zip(sim1):
                 f.write("\n")
-                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6]))
+                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6],i[0][7],i[0][8],i[0][9],i[0][10]))
         f = open(file_name, "a")
         f.write("\n")
         f.write("\n")  
         print(emptys)
-    f.close()      
+    f.close()  
         
     print("--- %s seconds ---" % (time.time() - start_time))
