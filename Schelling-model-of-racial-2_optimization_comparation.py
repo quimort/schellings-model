@@ -27,11 +27,7 @@ def rand_init(N,empty,a_to_b):
     M[int(-vacant):] = -1
     np.random.shuffle(M)
     return  M.reshape(int(N),int(N))
-def inicialize_empty(emptines):
-    global empty
-
-    empty = emptines
-def evolve(M,bloked,blocks_a,blocks_b,boundary='wrap'):
+def evolve1(M,bloked,blocks_a,blocks_b,boundary='wrap'):
     """
     Args:
         M(numpy.array): the matrix to be evolved
@@ -119,96 +115,90 @@ def evolve(M,bloked,blocks_a,blocks_b,boundary='wrap'):
     
     return M,dissatisfaction_n,bloked,blocks_a,blocks_b
 
-def get_mean_similarity_ratio(M,empty,boundary='wrap'):
-
+def evolve(M,boundary='wrap'):
+    """
+    Args:
+        M(numpy.array): the matrix to be evolved
+        boundary(str): Either wrap, fill or symm
+    if the siilarity ratio of neighbours
+    to the enitre neghtbourhood polupation
+    is lower than sim_t,
+    then the individual moves to an empty house. 
+    """
     Kws = dict(mode='same',boundary=boundary)
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
-    a_neights = a_neights + epsilon
-    b_neights = b_neights + epsilon
-    neights = neights + epsilon
-    n_similar_a = np.where(np.logical_and(np.logical_and(M !=-1,M == 0),neights != 0),\
-        a_neights/neights,0)
-    n_similar_b = np.where(np.logical_and(np.logical_and(M !=-1,M == 1),neights != 0),\
-         b_neights/neights,0)
-    n_similar = np.sum((n_similar_a+n_similar_b))
-    return n_similar/((1-empty)*N*N)
-
-def get_mean_dissatisfaction(M,empty,boundary='wrap'):
-
-    Kws = dict(mode='same',boundary=boundary)
-    a_neights = convolve(M == 0,Kernel,**Kws)
-    b_neights = convolve(M == 1,Kernel,**Kws)
-    neights = convolve(M != -1,Kernel,**Kws)
-    a_neights = a_neights + epsilon
-    b_neights = b_neights + epsilon
-    neights = neights + epsilon
     a_dissatisfaction = (a_neights/neights < sim_t)&(M == 0)
     b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
-    n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
-    return (n_a_dissatisfied+n_b_dissatisfied)/((1-empty)*N*N)
-
-def mean_interratial_pears(M,boundary='wrap'):
-    Kws = dict(mode='same',boundary=boundary)
-    a_neights = convolve(M == 0,Kernel,**Kws)
-    b_neights = convolve(M == 1,Kernel,**Kws)
-    a_positions = np.argwhere(M == 0) 
-    Y = np.transpose(a_positions)[0]
-    X = np.transpose(a_positions)[1]
-    b_neights_pears = b_neights[Y,X]
-    a_neight_pears = a_neights[Y,X]
-    interratial_pears_a = ((b_neights_pears.sum())/(b_neights_pears.sum()+a_neight_pears.sum()))
-    b_positions = np.argwhere(M == 1) 
-    Y = np.transpose(b_positions)[0]
-    X = np.transpose(b_positions)[1]
-    a_neights_pears = a_neights[Y,X]
-    b_neights_pears = b_neights[Y,X]
-    interratial_pears_b = ((a_neights_pears.sum())/(b_neights_pears.sum()+a_neights_pears.sum()))
-    return (interratial_pears_a,interratial_pears_b,(interratial_pears_a+interratial_pears_b))
-
-
-def start(arg):
-    M = rand_init(N,empty,A_to_B)
-    similarity_1 = get_mean_similarity_ratio(M,empty)
-    dissatisfacton_1 = get_mean_dissatisfaction(M,empty)
-    mean_interratial_1_a,mean_interratial_1_b,mean_interratial_1 = mean_interratial_pears(M)
-    bloked = False
-    blocks_a = False
-    blocks_b = False
+    dissatisfaction = a_dissatisfaction + b_dissatisfaction
+    cordenates = np.where(dissatisfaction == True)
+    index = np.vstack((cordenates[0], cordenates[1])).T
+    if (np.size(index,axis=0) == 0):
+        return M
+    random_number = np.random.randint(np.size(index,axis=0),size=1)
+    random_index = index[random_number][0]
+    cordenates_vacant = np.where((M == -1) == True)
+    index_vacants = np.vstack((cordenates_vacant[0], cordenates_vacant[1])).T
+    agent_tipe = M[random_index[0]][random_index[1]]
+    foundit = False
     counter = 0
-    
-    for i in range(30000):
-        M,dissatisfaction_n,bloked,blocks_a,blocks_b = evolve(M,bloked,blocks_a,blocks_b)
-        counter = i+1
-        if (dissatisfaction_n == 0 or bloked == True ) :
-            break
-    
-    similarity = get_mean_similarity_ratio(M,empty)
-    dissatisfacton = get_mean_dissatisfaction(M,empty)
-    mean_interratial_a,mean_interratial_b,mean_interratial = mean_interratial_pears(M)
-    return similarity_1,dissatisfacton_1,mean_interratial_1_a,mean_interratial_1_b,mean_interratial_1,similarity,dissatisfacton,mean_interratial_a,mean_interratial_b,mean_interratial,counter
-def inicialize_empty(emptines):
-    global empty
-
-    empty = emptines
-if __name__ == '__main__':
-    file_name = "schelling_values_100_model_2_30.csv"
+    while (not (foundit == True)) and (counter < np.size(index_vacants,axis=0)):
+        if (agent_tipe == 0):
+            position_a_neights = a_neights[index_vacants[counter][0]][index_vacants[counter][1]]
+            position_neights = neights[index_vacants[counter][0]][index_vacants[counter][1]]
+            if (position_a_neights/position_neights >= sim_t):
+                M[random_index[0]][random_index[1]] = -1
+                M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
+                foundit = True
+        else:
+            position_b_neights = b_neights[index_vacants[counter][0]][index_vacants[counter][1]]
+            position_neights = neights[index_vacants[counter][0]][index_vacants[counter][1]]
+            if (position_b_neights/position_neights >= sim_t):
+                M[random_index[0]][random_index[1]] = -1
+                M[index_vacants[counter][0]][index_vacants[counter][1]] = 0
+                foundit = True
+        counter += 1
+    """
+    for ii in index_vacants:
+        if (agent_tipe == 0):
+            position_a_neights = a_neights[ii[0]][ii[1]]
+            position_neights = neights[ii[0]][ii[1]]
+            if (position_a_neights/position_neights >= sim_t):
+                M[random_index[0]][random_index[1]] = -1
+                M[ii[0]][ii[1]] = 0
+                break
+        else:
+            position_b_neights = b_neights[ii[0]][ii[1]]
+            position_neights = neights[ii[0]][ii[1]]
+            if (position_b_neights/position_neights >= sim_t):
+                M[random_index[0]][random_index[1]] = -1
+                M[ii[0]][ii[1]] = 0
+                break
+    """
+    return M
+def start(empty):
+    M = rand_init(N,empty,A_to_B)
+    bloked = False
+    blocks = np.array([False,False])
+    counter = 0
     start_time = time.time()
-    emptines = np.logspace(-2,0,100)
-    f = open(file_name, "w")
-    f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial A;mean interratial pears inicial B;mean interratial pears inicial\
-        ;similarity ratio final;mean dissatisfaction final;mean interratial pears final A;mean interratial pears final B;mean interratial pears final;number of iterations")
-    for emptys in emptines:
-        with Pool(os.cpu_count(),initializer=inicialize_empty, initargs=(emptys,)) as p:
-            sim1= p.imap(start,range(100))
-            for i in zip(sim1):
-                f.write("\n")
-                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6],i[0][7],i[0][8],i[0][9],i[0][10]))
-        f = open(file_name, "a")
-        f.write("\n")
-        f.write("\n")  
-        print(emptys)
-    f.close()  
+    M,dissatisfaction_n,bloked,blocks = evolve1(M,bloked,blocks)
+    time1 = time.time() - start_time
+    start_time = time.time()
+    M = evolve(M)
+    time2 = time.time() - start_time
+    return time1,time2
+
+    
+
+
+file_name = "schelling_values_optimization_model_2_30.csv"
+emptines = np.logspace(-2,0,100)
+f = open(file_name, "w")
+f.write("empty;time opimaized;time no optimized")
+for i in emptines:
+    time1,time2 = start(i)
+    f.write("{};{};{}".format(i,time1,time2))
+f.close()  
         
-    print("--- %s seconds ---" % (time.time() - start_time))
