@@ -204,7 +204,7 @@ if __name__ == '__main__':
             sim1= p.imap(start,range(100))
             for i in zip(sim1):
                 f.write("\n")
-                f.write("{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6],i[0][7],i[0][8],i[0][9],i[0][10]))
+                f.write("{};{};{};{};{};{};{};{};{};{};{};{}".format(emptys,i[0][0],i[0][1],i[0][2],i[0][3],i[0][4],i[0][5],i[0][6],i[0][7],i[0][8],i[0][9],i[0][10]))
         f = open(file_name, "a")
         f.write("\n")
         f.write("\n")  
