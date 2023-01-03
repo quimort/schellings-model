@@ -27,7 +27,7 @@ def rand_init(N,empty,a_to_b):
     M[int(-vacant):] = -1
     np.random.shuffle(M)
     return  M.reshape(int(N),int(N))
-def evolve1(M,bloked,blocks_a,blocks_b,boundary='wrap'):
+def evolve1(M,boundary='wrap'):
     """
     Args:
         M(numpy.array): the matrix to be evolved
@@ -51,7 +51,7 @@ def evolve1(M,bloked,blocks_a,blocks_b,boundary='wrap'):
     cordenates = np.concatenate((cordenates_a,cordenates_b),axis = 0)
     if (np.size(cordenates,axis=0) == 0):
         bloked = True
-        return M,dissatisfaction_n,bloked,blocks_a,blocks_b
+        return M,dissatisfaction_n
     random_number = np.random.randint(np.size(cordenates,axis=0),size=1)
     random_index = cordenates[random_number][0]
     index_vacants = np.argwhere(M == -1)
@@ -67,8 +67,6 @@ def evolve1(M,bloked,blocks_a,blocks_b,boundary='wrap'):
             move_to = index_vacants[array_of_good_vacants[0][0]]
             M[random_index[0]][random_index[1]] = -1
             M[move_to[0]][move_to[1]] = 0
-        if( True not in satisfaying_vacants_a):
-            blocks_a = True
     else:
         b_neights_vacants = b_neights[Y,X]
         neights_vacants = neights[Y,X]
@@ -78,42 +76,8 @@ def evolve1(M,bloked,blocks_a,blocks_b,boundary='wrap'):
             move_to = index_vacants[array_of_good_vacants[0][0]]
             M[random_index[0]][random_index[1]] = -1
             M[move_to[0]][move_to[1]] = 1
-        if( True not in satisfaying_vacants_b):
-            blocks_b = True
-    if(blocks_a == True):
-        "a agents are blocked"
-        index_test = cordenates_b
-        if(np.size(index_test,axis=0) != 0):
-            cordenate_test = index_test[0]
-            b_neights_vacants = b_neights[Y,X]
-            neights_vacants = neights[Y,X]
-            satisfaying_vacants_b = (b_neights_vacants >= sim_t*neights_vacants)
-            if(True in satisfaying_vacants_b):
-                array_of_good_vacants = np.where(satisfaying_vacants_b == True)
-                move_to = index_vacants[array_of_good_vacants[0][0]]
-                M[cordenate_test[0]][cordenate_test[1]] = -1
-                M[move_to[0]][move_to[1]] = 1
-            if( True not in satisfaying_vacants_b):
-                blocks_b = True
-    if(blocks_b == True):
-        "b agents are blocked"
-        index_test = cordenates_a
-        if(np.size(index_test,axis=0) != 0):
-            cordenate_test = index_test[0]
-            a_neights_vacants = a_neights[Y,X]
-            neights_vacants = neights[Y,X]
-            satisfaying_vacants_a = (a_neights_vacants >= sim_t*neights_vacants)
-            if(True in satisfaying_vacants_a):
-                array_of_good_vacants = np.where(satisfaying_vacants_a == True)
-                move_to = index_vacants[array_of_good_vacants[0][0]]
-                M[cordenate_test[0]][cordenate_test[1]] = -1
-                M[move_to[0]][move_to[1]] = 1
-            if( True not in satisfaying_vacants_a):
-                blocks_a = True
-    if(blocks_a == True and blocks_b == True):
-       bloked= True
     
-    return M,dissatisfaction_n,bloked,blocks_a,blocks_b
+    return M,dissatisfaction_n
 
 def evolve(M,boundary='wrap'):
     """
@@ -129,13 +93,15 @@ def evolve(M,boundary='wrap'):
     a_neights = convolve(M == 0,Kernel,**Kws)
     b_neights = convolve(M == 1,Kernel,**Kws)
     neights = convolve(M != -1,Kernel,**Kws)
-    a_dissatisfaction = (a_neights/neights < sim_t)&(M == 0)
-    b_dissatisfaction = (b_neights/neights < sim_t)&(M == 1)
+    a_dissatisfaction = (a_neights < sim_t*neights)&(M == 0)
+    b_dissatisfaction = (b_neights < sim_t*neights)&(M == 1)
     dissatisfaction = a_dissatisfaction + b_dissatisfaction
+    n_a_dissatisfied, n_b_dissatisfied = a_dissatisfaction.sum(),b_dissatisfaction.sum()
+    dissatisfaction_n = (n_a_dissatisfied+n_b_dissatisfied)
     cordenates = np.where(dissatisfaction == True)
     index = np.vstack((cordenates[0], cordenates[1])).T
     if (np.size(index,axis=0) == 0):
-        return M
+        return M,dissatisfaction_n
     random_number = np.random.randint(np.size(index,axis=0),size=1)
     random_index = index[random_number][0]
     cordenates_vacant = np.where((M == -1) == True)
@@ -176,17 +142,21 @@ def evolve(M,boundary='wrap'):
                 M[ii[0]][ii[1]] = 0
                 break
     """
-    return M
+    return M,dissatisfaction_n
 def start(empty):
     M = rand_init(N,empty,A_to_B)
-    bloked = False
-    blocks = np.array([False,False])
-    counter = 0
     start_time = time.time()
-    M,dissatisfaction_n,bloked,blocks = evolve1(M,bloked,blocks)
+    for i in range(30000):
+        M,dissatisfaction_n= evolve1(M)
+        if (dissatisfaction_n == 0) :
+            break
     time1 = time.time() - start_time
+    M = rand_init(N,empty,A_to_B)
     start_time = time.time()
-    M = evolve(M)
+    for i in range(30000):
+        M,dissatisfaction_n_2 = evolve(M)
+        if (dissatisfaction_n_2 == 0) :
+            break
     time2 = time.time() - start_time
     return time1,time2
 
@@ -199,6 +169,8 @@ f = open(file_name, "w")
 f.write("empty;time opimaized;time no optimized")
 for i in emptines:
     time1,time2 = start(i)
+    f.write("\n")
     f.write("{};{};{}".format(i,time1,time2))
+    print(i)
 f.close()  
         
