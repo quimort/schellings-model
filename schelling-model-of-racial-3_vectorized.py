@@ -194,13 +194,12 @@ def get_mean_similarity_ratio(M,empty,boundary='wrap'):
     a_neights = a_neights + epsilon
     b_neights = b_neights + epsilon
     neights = neights + epsilon
-    n_similar_a = np.where(np.logical_and(M == 0,neights != 0),\
-        a_neights/neights,0)*(neights!=0)
-    n_similar_b = np.where(np.logical_and(M == 1,neights != 0),\
-         b_neights/neights,0)*(neights!=0)
+    n_similar_a = (a_neights/neights)*(neights!=0)*(M==0)
+    n_similar_b = (b_neights/neights)*(neights!=0)*(M==1)
     n_similar = np.sum((n_similar_a+n_similar_b))
-    no_neights = np.sum(neights != 0)
-    return n_similar/((1-empty)*N*N-no_neights)
+    no_neights = neights == 0
+    no_neights_val = np.sum(no_neights)
+    return n_similar/((1-empty)*N*N-no_neights_val)
 
 def get_mean_dissatisfaction(M,empty,boundary='wrap'):
 
