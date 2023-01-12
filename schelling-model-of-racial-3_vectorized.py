@@ -193,11 +193,12 @@ def get_mean_similarity_ratio(M,empty,boundary='wrap'):
     neights = convolve(M != -1,Kernel,**Kws)
     a_neights = a_neights + epsilon
     b_neights = b_neights + epsilon
+    neight_ = neights
     neights = neights + epsilon
-    n_similar_a = (a_neights/neights)*(neights!=0)*(M==0)
-    n_similar_b = (b_neights/neights)*(neights!=0)*(M==1)
+    n_similar_a = (a_neights/neights)*(neight_!=0)*(M==0)
+    n_similar_b = (b_neights/neights)*(neight_!=0)*(M==1)
     n_similar = np.sum((n_similar_a+n_similar_b))
-    no_neights = neights == 0
+    no_neights = (neight_ == 0)
     no_neights_val = np.sum(no_neights)
     return n_similar/((1-empty)*N*N-no_neights_val)
 
