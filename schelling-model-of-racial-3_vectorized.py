@@ -6,7 +6,7 @@ from multiprocessing import Pool
 import os
 # Gloval variables of the simulation
 N = 30
-sim_t = 0.5
+sim_t = 0.4
 empty = 0.001
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
@@ -258,7 +258,7 @@ def inicialize_empty(emptines):
 
     empty = emptines
 if __name__ == '__main__':
-    file_name = "schelling_values_100_model_3_30.csv"
+    file_name = "schelling_values_100_model_3_30_04.csv"
     start_time = time.time()
     emptines = np.logspace(-2,0,100)
     f = open(file_name, "w")
