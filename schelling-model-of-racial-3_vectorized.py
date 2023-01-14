@@ -197,7 +197,7 @@ def get_mean_similarity_ratio(M,empty,boundary='wrap'):
     neights = neights + epsilon
     n_similar_a = (a_neights/neights)*(neight_!=0)*(M==0)
     n_similar_b = (b_neights/neights)*(neight_!=0)*(M==1)
-    n_similar = np.sum((n_similar_a+n_similar_b))
+    n_similar = int(np.sum((n_similar_a+n_similar_b)))
     no_neights = (neight_ == 0)
     no_neights_val = np.sum(no_neights)
     return n_similar/((1-empty)*N*N-no_neights_val)
@@ -260,7 +260,7 @@ def inicialize_empty(emptines):
 if __name__ == '__main__':
     file_name = "schelling_values_100_model_3_30_04.csv"
     start_time = time.time()
-    emptines = np.logspace(-2,0,100)
+    emptines = np.logspace(-2,-0.07059,100)
     f = open(file_name, "w")
     f.write("vacant;similarity ratio inicial;mean dissatisfaction inicial;mean interratial pears inicial A;mean interratial pears inicial B;mean interratial pears inicial\
         ;similarity ratio final;mean dissatisfaction final;mean interratial pears final A;mean interratial pears final B;mean interratial pears final;number of iterations")
