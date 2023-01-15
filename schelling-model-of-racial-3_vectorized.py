@@ -6,7 +6,7 @@ from multiprocessing import Pool
 import os
 # Gloval variables of the simulation
 N = 30
-sim_t = 0.4
+sim_t = 0.6
 empty = 0.001
 A_to_B = 1
 Kernel = np.array([[1,1,1],[1,0,1],[1,1,1]],dtype=np.int8)
@@ -198,7 +198,7 @@ def get_mean_similarity_ratio(M,empty,boundary='wrap'):
     n_similar_a = (a_neights/neights)*(neight_!=0)*(M==0)
     n_similar_b = (b_neights/neights)*(neight_!=0)*(M==1)
     n_similar = int(np.sum((n_similar_a+n_similar_b)))
-    no_neights = (neight_ == 0)
+    no_neights = (neight_ == 0)*(M!=-1)
     no_neights_val = np.sum(no_neights)
     return n_similar/((1-empty)*N*N-no_neights_val)
 
@@ -258,7 +258,7 @@ def inicialize_empty(emptines):
 
     empty = emptines
 if __name__ == '__main__':
-    file_name = "schelling_values_100_model_3_30_04.csv"
+    file_name = "schelling_values_100_model_3_30_06.csv"
     start_time = time.time()
     emptines = np.logspace(-2,-0.07059,100)
     f = open(file_name, "w")
