@@ -76,9 +76,9 @@ class _ComonOperations:
     def get_mean_similarity_ratio(self,M,empty,boundary='wrap'):
 
         Kws = dict(mode='same',boundary=boundary)
-        a_neights = convolve(M == 0,self.Kernel,**Kws)
-        b_neights = convolve(M == 1,self.Kernel,**Kws)
-        neights = convolve(M != -1,self.Kernel,**Kws)
+        a_neights = convolve(M == 0,self.kernel,**Kws)
+        b_neights = convolve(M == 1,self.kernel,**Kws)
+        neights = convolve(M != -1,self.kernel,**Kws)
         a_neights = a_neights + self.epsilon
         b_neights = b_neights + self.epsilon
         neight_ = np.copy(neights)
@@ -93,9 +93,9 @@ class _ComonOperations:
     def get_mean_dissatisfaction(self,M,empty,boundary='wrap'):
 
         Kws = dict(mode='same',boundary=boundary)
-        a_neights = convolve(M == 0,self.Kernel,**Kws)
-        b_neights = convolve(M == 1,self.Kernel,**Kws)
-        neights = convolve(M != -1,self.Kernel,**Kws)
+        a_neights = convolve(M == 0,self.kernel,**Kws)
+        b_neights = convolve(M == 1,self.kernel,**Kws)
+        neights = convolve(M != -1,self.kernel,**Kws)
         a_neights = a_neights + self.epsilon
         b_neights = b_neights + self.epsilon
         neights = neights + self.epsilon
@@ -106,8 +106,8 @@ class _ComonOperations:
 
     def mean_interratial_pears(self,M,boundary='wrap'):
         Kws = dict(mode='same',boundary=boundary)
-        a_neights = convolve(M == 0,self.Kernel,**Kws)
-        b_neights = convolve(M == 1,self.Kernel,**Kws)
+        a_neights = convolve(M == 0,self.kernel,**Kws)
+        b_neights = convolve(M == 1,self.kernel,**Kws)
         a_positions = np.argwhere(M == 0) 
         Y = np.transpose(a_positions)[0]
         X = np.transpose(a_positions)[1]
@@ -281,6 +281,8 @@ class ClassicSchellingModel:
         self.blocked = False
         self.blocks_a = False
         self.blocks_b = False
+        self.boundary = boundary
+        self._ComonOperatios = _ComonOperations(self.n,self.sim_t,self.empty,self.ratio,self.kernel,self.epsilon,self.kernel)
 
     def rand_init(self):
         """ Random grid initialitzation
@@ -299,7 +301,7 @@ class ClassicSchellingModel:
         self.M = M.reshape(int(self.n),int(self.n))
         return  self
     
-    def evolve(self):
+    def step(self):
         """
         Args:
             M(numpy.array): the matrix to be evolved
@@ -311,9 +313,9 @@ class ClassicSchellingModel:
         """
         
         Kws = dict(mode='same',boundary=self.boundary)
-        a_neights = convolve(self.M == 0,self.Kernel,**Kws)
-        b_neights = convolve(self.M == 1,self.Kernel,**Kws)
-        neights = convolve(self.M != -1,self.Kernel,**Kws)
+        a_neights = convolve(self.M == 0,self.kernel,**Kws)
+        b_neights = convolve(self.M == 1,self.kernel,**Kws)
+        neights = convolve(self.M != -1,self.kernel,**Kws)
         a_dissatisfaction = (a_neights < self.sim_t*neights)&(self.M == 0)
         b_dissatisfaction = (b_neights < self.sim_t*neights)&(self.M == 1)
         cordenates_a = np.argwhere(a_dissatisfaction)
@@ -325,7 +327,7 @@ class ClassicSchellingModel:
         
         random_number = np.random.randint(np.size(cordenates,axis=0),size=1)
         random_index = cordenates[random_number][0]
-        index_vacants = np.argwhere(M == -1)
+        index_vacants = np.argwhere(self.M == -1)
         agent_tipe = self.M[random_index[0]][random_index[1]]
         Y = np.transpose(index_vacants)[0]
         X = np.transpose(index_vacants)[1]
