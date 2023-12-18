@@ -25,13 +25,13 @@ class _ComonOperations:
     def _calc_neights(self,positions,type,boundary='wrap'):
         Kws = dict(mode='same',boundary=boundary)
         positions = positions.reshape(5,5)
-        positions2 = (convolve(positions == type,self.Kernel,**Kws))[1:4,1:4]
+        positions2 = (convolve(positions == type,self.kernel,**Kws))[1:4,1:4]
         return positions2
 
     def _calc_all_neights(self,positions,boundary='wrap'):
         Kws = dict(mode='same',boundary=boundary)
         positions = positions.reshape(5,5)
-        positions2 = (convolve(positions != -1,self.Kernel,**Kws))[1:4,1:4]
+        positions2 = (convolve(positions != -1,self.kernel,**Kws))[1:4,1:4]
         return positions2
     
     def _change_pos_type(self,positions):
@@ -168,9 +168,9 @@ class AltruisticSchellingModel:
         then the individual moves to an empty house. 
         """
         Kws = dict(mode='same',boundary=self.boundary)
-        a_neights = convolve(self.M == 0,self.Kernel,**Kws)
-        b_neights = convolve(self.M == 1,self.Kernel,**Kws)
-        neights = convolve(self.M != -1,self.Kernel,**Kws)
+        a_neights = convolve(self.M == 0,self.kernel,**Kws)
+        b_neights = convolve(self.M == 1,self.kernel,**Kws)
+        neights = convolve(self.M != -1,self.kernel,**Kws)
         a_dissatisfaction = (a_neights < self.sim_t*neights)&(self.M == 0)
         b_dissatisfaction = (b_neights < self.sim_t*neights)&(self.M == 1)
         cordenates_a = np.argwhere(a_dissatisfaction)
@@ -182,14 +182,14 @@ class AltruisticSchellingModel:
         
         random_number = np.random.randint(np.size(cordenates,axis=0),size=1)
         random_index = cordenates[random_number][0]
-        index_vacants = np.argwhere(M == -1)
+        index_vacants = np.argwhere(self.M == -1)
         agent_tipe = self.M[random_index[0]][random_index[1]]
         Y = np.transpose(index_vacants)[0]
         X = np.transpose(index_vacants)[1]
         if(np.size(index_vacants,axis=0)==0):
-            print((M==-1).sum())
+            print((self.M==-1).sum())
         if (agent_tipe == 0 ):
-            dissatisfaied_vacant = self._ComonOperatios._check_happines_neighborhod(self.M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
+            dissatisfaied_vacant = self._ComonOperatios.check_happines_neighborhod(self.M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
             a_neights_vacants = a_neights[Y,X]
             neights_vacants = neights[Y,X]
             satisfaying_vacants_a = (a_neights_vacants >= self.sim_t*neights_vacants)
@@ -202,7 +202,7 @@ class AltruisticSchellingModel:
             if( True not in satisfaying_vacants_a):
                 self.blocks[0] = True
         else:
-            dissatisfaied_vacant = self._ComonOperatios._check_happines_neighborhod(self.M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
+            dissatisfaied_vacant = self._ComonOperatios.check_happines_neighborhod(self.M,index_vacants,agent_tipe,random_index,a_neights,b_neights,neights)
             b_neights_vacants = b_neights[Y,X]
             neights_vacants = neights[Y,X]
             satisfaying_vacants_b = (b_neights_vacants >= self.sim_t*neights_vacants)
