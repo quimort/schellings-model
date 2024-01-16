@@ -1,0 +1,2 @@
+from schelling_model.schelling_model import AltruisticSchellingModel
+from schelling_model.schelling_model import ClassicSchellingModel

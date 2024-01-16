@@ -7,3 +7,6 @@ Schelling-model-of-racial-2.py
 schelling-model-of-racial-3_vectorized.py
 schelling-model-of-racial-3.py
 .vscode
+build
+dist
+schelling_model.egg-info
